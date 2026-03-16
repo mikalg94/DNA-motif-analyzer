@@ -1,0 +1,7 @@
+.idea/
+venv/
+__pycache__/
+*.pyc
+results/*.csv
+results/*.png
+results/*.pdf
