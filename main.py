@@ -1,5 +1,9 @@
+from src.io_utils import load_sequence_from_txt
+
+
 def main():
-    print("DNA Motif Analyzer started")
+    sequence = load_sequence_from_txt("data/example_sequence.txt")
+    print("Sequence length:", len(sequence))
 
 
 if __name__ == "__main__":
