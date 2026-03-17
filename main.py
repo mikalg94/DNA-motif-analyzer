@@ -1,13 +1,17 @@
-from src.io_utils import load_sequence_from_txt, load_sequence_from_fasta
+from src.io_utils import load_sequence_from_txt
+from src.motif_analysis import find_motif_positions, count_motif_occurrences
 
 
 def main():
-    txt_sequence = load_sequence_from_txt("data/example_sequence.txt")
-    fasta_sequence = load_sequence_from_fasta("data/example_sequence.fasta")
+    sequence = load_sequence_from_txt("data/example_sequence.txt")
+    motif = "ATG"
 
-    print("TXT length:", len(txt_sequence))
-    print("FASTA length:", len(fasta_sequence))
-    print("Sequences are equal:", txt_sequence == fasta_sequence)
+    positions = find_motif_positions(sequence, motif)
+    count = count_motif_occurrences(sequence, motif)
+
+    print("Motif:", motif)
+    print("Positions:", positions)
+    print("Occurrences:", count)
 
 
 if __name__ == "__main__":
