@@ -1,5 +1,7 @@
 def find_motif_positions(sequence, motif):
     positions = []
+    sequence = sequence.upper()
+    motif = motif.upper()
     motif_length = len(motif)
 
     for i in range(len(sequence) - motif_length + 1):
