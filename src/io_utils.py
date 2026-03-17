@@ -7,3 +7,15 @@ def load_sequence_from_txt(path):
     sequence = sequence.upper()
 
     return sequence
+
+
+def load_sequence_from_fasta(path):
+    sequence = ""
+
+    with open(path, "r") as file:
+        for line in file:
+            if line.startswith(">"):
+                continue
+            sequence += line.strip()
+
+    return sequence.upper()
