@@ -6,6 +6,5 @@ def main():
     print("Sequence length:", len(sequence))
     print("Sequence:", sequence)
 
-
 if __name__ == "__main__":
     main()
