@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def find_motif_positions(sequence, motif):
     positions = []
     sequence = sequence.upper()
@@ -35,3 +38,23 @@ def count_motif_in_segments(sequence, motif, segment_length=10):
         counts.append(count)
 
     return counts
+
+
+def build_statistics_dataframe(sequence, motif, segment_length=10):
+    segments = segment_sequence(sequence, segment_length)
+    data = []
+
+    for i, segment in enumerate(segments):
+        count = count_motif_occurrences(segment, motif)
+        start = i * segment_length
+        end = start + len(segment) - 1
+
+        data.append({
+            "segment_id": i + 1,
+            "start": start,
+            "end": end,
+            "motif_count": count
+        })
+
+    df = pd.DataFrame(data)
+    return df
