@@ -1,17 +1,15 @@
 from src.io_utils import load_sequence_from_txt
-from src.motif_analysis import find_motif_positions, count_motif_occurrences
+from src.motif_analysis import count_motif_in_segments
 
 
 def main():
     sequence = load_sequence_from_txt("data/example_sequence.txt")
     motif = "ATG"
 
-    positions = find_motif_positions(sequence, motif)
-    count = count_motif_occurrences(sequence, motif)
+    counts = count_motif_in_segments(sequence, motif, segment_length=10)
 
     print("Motif:", motif)
-    print("Positions:", positions)
-    print("Occurrences:", count)
+    print("Counts in segments:", counts)
 
 
 if __name__ == "__main__":
