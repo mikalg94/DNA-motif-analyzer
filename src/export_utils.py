@@ -1,14 +1,69 @@
-import matplotlib
-matplotlib.use("TkAgg")
+import os
 
 import matplotlib.pyplot as plt
+import pandas as pd
+import plotly.express as px
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 
-import plotly.express as px
-import os
-import pandas as pd
 
+def create_motif_distribution_figure(df, motif):
+    fig = Figure(figsize=(8, 5))
+    ax = fig.add_subplot(111)
+    ax.bar(df["segment_id"], df["motif_count"])
+    ax.set_xlabel("Segment")
+    ax.set_ylabel("Motif count")
+    ax.set_title(f"Distribution of motif {motif}")
+    fig.tight_layout()
+    return fig
+
+
+def create_motif_positions_figure(results, sequence_length):
+    fig = Figure(figsize=(10, 4))
+    ax = fig.add_subplot(111)
+
+    y_level = 1
+    labels_added = set()
+
+    for result in results:
+        positions = result["positions"]
+        motif = result["motif"]
+
+        if positions:
+            label = motif if motif not in labels_added else None
+            ax.scatter(positions, [y_level] * len(positions), label=label)
+            labels_added.add(motif)
+
+        y_level += 1
+
+    ax.set_xlim(0, sequence_length)
+    ax.set_xlabel("Position in sequence")
+    ax.set_ylabel("Motif index")
+    ax.set_title("Motif positions on DNA sequence axis")
+
+    if labels_added:
+        ax.legend()
+
+    fig.tight_layout()
+    return fig
+
+
+def create_multiple_motifs_summary_figure(results):
+    motifs = [result["motif"] for result in results]
+    counts = [result["count"] for result in results]
+
+    fig = Figure(figsize=(8, 5))
+    ax = fig.add_subplot(111)
+    ax.bar(motifs, counts)
+    ax.set_xlabel("Motif")
+    ax.set_ylabel("Count")
+    ax.set_title("Summary of motif occurrences")
+    fig.tight_layout()
+    return fig
+
+
+# Functions below are used for saving plots to files
+# and for optional direct display outside the Tkinter windows.
 
 def plot_motif_distribution(df, motif, output_path=None, show_plot=True):
     plt.figure(figsize=(8, 5))
@@ -48,8 +103,10 @@ def plot_motif_positions(results, sequence_length, output_path=None, show_plot=T
     plt.xlabel("Position in sequence")
     plt.ylabel("Motif index")
     plt.title("Motif positions on DNA sequence axis")
+
     if labels_added:
         plt.legend()
+
     plt.tight_layout()
 
     if output_path:
@@ -59,6 +116,7 @@ def plot_motif_positions(results, sequence_length, output_path=None, show_plot=T
         plt.show()
     else:
         plt.close()
+
 
 def plot_multiple_motifs_summary(results, output_path=None, show_plot=True):
     motifs = [result["motif"] for result in results]
@@ -78,6 +136,7 @@ def plot_multiple_motifs_summary(results, output_path=None, show_plot=True):
         plt.show()
     else:
         plt.close()
+
 
 def interactive_motif_positions(results, sequence_length, output_html="results/interactive_motif_positions.html"):
     rows = []
@@ -108,62 +167,16 @@ def interactive_motif_positions(results, sequence_length, output_html="results/i
         title="Interactive motif positions on sequence axis"
     )
 
-    fig.update_layout(xaxis_title="Position in sequence", yaxis_title="Motif")
+    fig.update_layout(
+        xaxis_title="Position in sequence",
+        yaxis_title="Motif"
+    )
+
+    os.makedirs(os.path.dirname(output_html), exist_ok=True)
     fig.write_html(output_html)
+
     return output_html
 
-def create_motif_distribution_figure(df, motif):
-    fig = Figure(figsize=(8, 5))
-    ax = fig.add_subplot(111)
-    ax.bar(df["segment_id"], df["motif_count"])
-    ax.set_xlabel("Segment")
-    ax.set_ylabel("Motif count")
-    ax.set_title(f"Distribution of motif {motif}")
-    fig.tight_layout()
-    return fig
-
-
-def create_motif_positions_figure(results, sequence_length):
-    fig = Figure(figsize=(10, 4))
-    ax = fig.add_subplot(111)
-
-    y_level = 1
-    labels_added = set()
-
-    for result in results:
-        positions = result["positions"]
-        motif = result["motif"]
-
-        if positions:
-            label = motif if motif not in labels_added else None
-            ax.scatter(positions, [y_level] * len(positions), label=label)
-            labels_added.add(motif)
-
-        y_level += 1
-
-    ax.set_xlim(0, sequence_length)
-    ax.set_xlabel("Position in sequence")
-    ax.set_ylabel("Motif index")
-    ax.set_title("Motif positions on DNA sequence axis")
-    if labels_added:
-        ax.legend()
-
-    fig.tight_layout()
-    return fig
-
-
-def create_multiple_motifs_summary_figure(results):
-    motifs = [result["motif"] for result in results]
-    counts = [result["count"] for result in results]
-
-    fig = Figure(figsize=(8, 5))
-    ax = fig.add_subplot(111)
-    ax.bar(motifs, counts)
-    ax.set_xlabel("Motif")
-    ax.set_ylabel("Count")
-    ax.set_title("Summary of motif occurrences")
-    fig.tight_layout()
-    return fig
 
 def export_results_to_csv(df, output_path):
     df.to_csv(output_path, index=False)
@@ -206,6 +219,7 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
         plt.tight_layout()
         pdf.savefig(fig)
         plt.close(fig)
+
 
 def save_analysis_history(entry, output_path="results/analysis_history.csv"):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
