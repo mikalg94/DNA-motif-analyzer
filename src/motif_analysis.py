@@ -76,3 +76,21 @@ def analyze_multiple_motifs(sequence, motifs):
             })
 
     return results
+
+
+def compare_sequences(sequence1, sequence2, motifs):
+    comparison_data = []
+
+    for motif in motifs:
+        motif = motif.strip().upper()
+        if motif:
+            count1 = count_motif_occurrences(sequence1, motif)
+            count2 = count_motif_occurrences(sequence2, motif)
+
+            comparison_data.append({
+                "motif": motif,
+                "sequence_1_count": count1,
+                "sequence_2_count": count2
+            })
+
+    return pd.DataFrame(comparison_data)
