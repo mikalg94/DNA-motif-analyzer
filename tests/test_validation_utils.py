@@ -1,5 +1,6 @@
 import pytest
-from src.validation_utils import validate_dna_sequence, validate_motif, normalize_motifs
+
+from src.validation_utils import normalize_motifs, validate_dna_sequence, validate_motif
 
 
 def test_validate_dna_sequence_valid():

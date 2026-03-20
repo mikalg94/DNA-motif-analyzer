@@ -1,5 +1,6 @@
 import tempfile
-from src.io_utils import load_sequence_from_txt, load_sequence_from_fasta
+
+from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
 
 
 def test_load_sequence_from_txt():

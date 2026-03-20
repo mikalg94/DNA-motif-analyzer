@@ -1,9 +1,9 @@
 from src.motif_analysis import (
-    find_motif_positions,
-    count_motif_occurrences,
-    segment_sequence,
     build_statistics_dataframe,
-    compare_sequences
+    compare_sequences,
+    count_motif_occurrences,
+    find_motif_positions,
+    segment_sequence,
 )
 
 
