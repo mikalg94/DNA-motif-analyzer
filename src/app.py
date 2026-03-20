@@ -152,7 +152,7 @@ class App:
 
             try:
                 self.sequence = self._load_sequence_from_path(self.file_path)
-                messagebox.showinfo("Success", "First sequence loaded successfully.")
+                messagebox.showinfo("Success", f"First sequence loaded successfully.\nLength: {len(self.sequence)}")
             except Exception as e:
                 self.sequence = ""
                 messagebox.showerror("Error", f"Failed to load first sequence: {e}")
@@ -167,7 +167,7 @@ class App:
 
             try:
                 self.sequence_2 = self._load_sequence_from_path(self.file_path_2)
-                messagebox.showinfo("Success", "Second sequence loaded successfully.")
+                messagebox.showinfo("Success", f"Second sequence loaded successfully.\nLength: {len(self.sequence_2)}")
             except Exception as e:
                 self.sequence_2 = ""
                 messagebox.showerror("Error", f"Failed to load second sequence: {e}")
@@ -282,17 +282,28 @@ class App:
         self.selected_motif_combobox.set(motifs[0])
 
         self.last_selected_motif = motifs[0]
-        self.last_statistics_df = build_statistics_dataframe(self.sequence, self.last_selected_motif, segment_length)
+        self.last_statistics_df = build_statistics_dataframe(
+            self.sequence,
+            self.last_selected_motif,
+            segment_length
+        )
 
         self.result_text.delete("1.0", tk.END)
+        self.result_text.insert(tk.END, "ANALYSIS RESULTS\n\n")
+        self.result_text.insert(tk.END, f"Sequence loaded: YES\n")
         self.result_text.insert(tk.END, f"Sequence length: {len(self.sequence)}\n")
+        self.result_text.insert(tk.END, f"Recognized motifs: {', '.join(motifs)}\n")
         self.result_text.insert(tk.END, f"Segment length: {segment_length}\n\n")
 
         for result in results:
-            line = f"Motif: {result['motif']} | Count: {result['count']} | Positions: {result['positions']}\n"
+            line = (
+                f"Motif: {result['motif']} | "
+                f"Count: {result['count']} | "
+                f"Positions: {result['positions']}\n"
+            )
             self.result_text.insert(tk.END, line)
 
-        self.result_text.insert(tk.END, "\nSegment statistics for first motif:\n")
+        self.result_text.insert(tk.END, "\nSegment statistics for selected motif:\n")
         self.result_text.insert(tk.END, self.last_statistics_df.to_string(index=False))
         self.result_text.insert(tk.END, "\n")
 
@@ -310,9 +321,12 @@ class App:
         self.last_comparison_df = compare_sequences(self.sequence, self.sequence_2, motifs)
 
         self.result_text.delete("1.0", tk.END)
-        self.result_text.insert(tk.END, "Sequence comparison results:\n\n")
+        self.result_text.insert(tk.END, "COMPARISON RESULTS\n\n")
+        self.result_text.insert(tk.END, f"Sequence 1 loaded: YES\n")
+        self.result_text.insert(tk.END, f"Sequence 2 loaded: YES\n")
         self.result_text.insert(tk.END, f"Sequence 1 length: {len(self.sequence)}\n")
-        self.result_text.insert(tk.END, f"Sequence 2 length: {len(self.sequence_2)}\n\n")
+        self.result_text.insert(tk.END, f"Sequence 2 length: {len(self.sequence_2)}\n")
+        self.result_text.insert(tk.END, f"Recognized motifs: {', '.join(motifs)}\n\n")
         self.result_text.insert(tk.END, self.last_comparison_df.to_string(index=False))
         self.result_text.insert(tk.END, "\n")
 
