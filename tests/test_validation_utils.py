@@ -20,3 +20,13 @@ def test_validate_motif_invalid():
 def test_normalize_motifs():
     motifs = normalize_motifs([" atg ", "TATA", "atg"])
     assert motifs == ["ATG", "TATA"]
+
+
+def test_normalize_motifs_empty_values():
+    motifs = normalize_motifs([" ", "   ", ""])
+    assert motifs == []
+
+
+def test_validate_dna_sequence_empty():
+    with pytest.raises(ValueError):
+        validate_dna_sequence("")

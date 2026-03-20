@@ -110,9 +110,14 @@ class App:
         self.result_text.pack(pady=10)
 
     def _load_sequence_from_path(self, path):
-        if path.endswith(".txt"):
+        lowered = path.lower()
+
+        if lowered.endswith(".txt"):
             return load_sequence_from_txt(path)
-        return load_sequence_from_fasta(path)
+        if lowered.endswith(".fasta") or lowered.endswith(".fa"):
+            return load_sequence_from_fasta(path)
+
+        raise ValueError("Unsupported file format. Please choose TXT, FASTA, or FA.")
 
     def choose_file(self):
         self.file_path = filedialog.askopenfilename(
@@ -182,7 +187,18 @@ class App:
 
         motifs = normalize_motifs(motifs_text.split(","))
 
-        segment_length = int(self.segment_entry.get().strip())
+        if not motifs:
+            raise ValueError("Please enter at least one valid motif.")
+
+        segment_text = self.segment_entry.get().strip()
+        if not segment_text:
+            raise ValueError("Segment length cannot be empty.")
+
+        try:
+            segment_length = int(segment_text)
+        except ValueError:
+            raise ValueError("Segment length must be an integer.")
+
         if segment_length <= 0:
             raise ValueError("Segment length must be a positive integer.")
 
