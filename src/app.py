@@ -183,7 +183,7 @@ class App:
         try:
             self.sequence = fetch_sequence_from_ncbi(accession_id, email)
             self.file_label.config(text=f"Loaded first from NCBI: {accession_id}")
-            messagebox.showinfo("Success", "First sequence downloaded from NCBI.")
+            messagebox.showinfo("Success", f"First sequence downloaded from NCBI.\nLength: {len(self.sequence)}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download first sequence: {e}")
 
@@ -198,7 +198,7 @@ class App:
         try:
             self.sequence_2 = fetch_sequence_from_ncbi(accession_id, email)
             self.file_label_2.config(text=f"Loaded second from NCBI: {accession_id}")
-            messagebox.showinfo("Success", "Second sequence downloaded from NCBI.")
+            messagebox.showinfo("Success", f"Second sequence downloaded from NCBI.\nLength: {len(self.sequence_2)}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download second sequence: {e}")
 
@@ -308,27 +308,38 @@ class App:
         self.result_text.insert(tk.END, "\n")
 
     def run_comparison(self):
-        if not self.sequence or not self.sequence_2:
-            messagebox.showerror("Error", "Please load two sequences before comparison.")
+        self.result_text.delete("1.0", tk.END)
+        self.result_text.insert(tk.END, "Starting comparison...\n")
+
+        if not self.sequence:
+            messagebox.showerror("Error", "First sequence is not loaded.")
+            self.result_text.insert(tk.END, "First sequence is missing.\n")
+            return
+
+        if not self.sequence_2:
+            messagebox.showerror("Error", "Second sequence is not loaded.")
+            self.result_text.insert(tk.END, "Second sequence is missing.\n")
             return
 
         try:
             motifs, _ = self._get_motifs_and_segment_length()
+            self.result_text.insert(tk.END, f"Motifs: {motifs}\n")
+            self.result_text.insert(tk.END, f"Sequence 1 length: {len(self.sequence)}\n")
+            self.result_text.insert(tk.END, f"Sequence 2 length: {len(self.sequence_2)}\n")
+
+            self.last_comparison_df = compare_sequences(self.sequence, self.sequence_2, motifs)
+
+            self.result_text.insert(tk.END, "\nComparison finished successfully.\n\n")
+
+            if self.last_comparison_df.empty:
+                self.result_text.insert(tk.END, "No comparison data to display.\n")
+            else:
+                self.result_text.insert(tk.END, self.last_comparison_df.to_string(index=False))
+                self.result_text.insert(tk.END, "\n")
+
         except Exception as e:
-            messagebox.showerror("Error", str(e))
-            return
-
-        self.last_comparison_df = compare_sequences(self.sequence, self.sequence_2, motifs)
-
-        self.result_text.delete("1.0", tk.END)
-        self.result_text.insert(tk.END, "COMPARISON RESULTS\n\n")
-        self.result_text.insert(tk.END, f"Sequence 1 loaded: YES\n")
-        self.result_text.insert(tk.END, f"Sequence 2 loaded: YES\n")
-        self.result_text.insert(tk.END, f"Sequence 1 length: {len(self.sequence)}\n")
-        self.result_text.insert(tk.END, f"Sequence 2 length: {len(self.sequence_2)}\n")
-        self.result_text.insert(tk.END, f"Recognized motifs: {', '.join(motifs)}\n\n")
-        self.result_text.insert(tk.END, self.last_comparison_df.to_string(index=False))
-        self.result_text.insert(tk.END, "\n")
+            messagebox.showerror("Error", f"Comparison failed: {e}")
+            self.result_text.insert(tk.END, f"\nComparison failed: {e}\n")
 
     def export_csv(self):
         if self.last_statistics_df is None and self.last_comparison_df is None:
