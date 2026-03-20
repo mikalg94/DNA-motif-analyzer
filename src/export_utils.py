@@ -23,12 +23,16 @@ def plot_motif_positions(results, sequence_length, output_path=None, show_plot=T
     plt.figure(figsize=(10, 4))
 
     y_level = 1
+    labels_added = set()
+
     for result in results:
         positions = result["positions"]
         motif = result["motif"]
 
         if positions:
-            plt.scatter(positions, [y_level] * len(positions), label=motif)
+            label = motif if motif not in labels_added else None
+            plt.scatter(positions, [y_level] * len(positions), label=label)
+            labels_added.add(motif)
 
         y_level += 1
 
@@ -36,7 +40,8 @@ def plot_motif_positions(results, sequence_length, output_path=None, show_plot=T
     plt.xlabel("Position in sequence")
     plt.ylabel("Motif index")
     plt.title("Motif positions on DNA sequence axis")
-    plt.legend()
+    if labels_added:
+        plt.legend()
     plt.tight_layout()
 
     if output_path:
