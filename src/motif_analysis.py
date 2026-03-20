@@ -30,30 +30,40 @@ def segment_sequence(sequence, segment_length=10):
 
 
 def count_motif_in_segments(sequence, motif, segment_length=10):
-    segments = segment_sequence(sequence, segment_length)
-    counts = []
+    positions = find_motif_positions(sequence, motif)
+    segment_count = (len(sequence) + segment_length - 1) // segment_length
+    counts = [0] * segment_count
 
-    for segment in segments:
-        count = count_motif_occurrences(segment, motif)
-        counts.append(count)
+    for position in positions:
+        segment_index = position // segment_length
+        counts[segment_index] += 1
 
     return counts
 
 
 def build_statistics_dataframe(sequence, motif, segment_length=10):
     segments = segment_sequence(sequence, segment_length)
+    motif_positions = find_motif_positions(sequence, motif)
+    motif_counts = count_motif_in_segments(sequence, motif, segment_length)
+
     data = []
 
     for i, segment in enumerate(segments):
-        count = count_motif_occurrences(segment, motif)
         start = i * segment_length
         end = start + len(segment) - 1
+
+        segment_positions = [
+            pos for pos in motif_positions
+            if start <= pos <= end
+        ]
 
         data.append({
             "segment_id": i + 1,
             "start": start,
             "end": end,
-            "motif_count": count
+            "segment_length": len(segment),
+            "motif_count": motif_counts[i],
+            "motif_positions": ", ".join(map(str, segment_positions)) if segment_positions else ""
         })
 
     df = pd.DataFrame(data)
@@ -81,16 +91,27 @@ def analyze_multiple_motifs(sequence, motifs):
 def compare_sequences(sequence1, sequence2, motifs):
     comparison_data = []
 
+    len1 = len(sequence1)
+    len2 = len(sequence2)
+
     for motif in motifs:
         motif = motif.strip().upper()
         if motif:
             count1 = count_motif_occurrences(sequence1, motif)
             count2 = count_motif_occurrences(sequence2, motif)
 
+            freq1 = round((count1 / len1) * 1000, 3) if len1 else 0
+            freq2 = round((count2 / len2) * 1000, 3) if len2 else 0
+
             comparison_data.append({
                 "motif": motif,
+                "sequence_1_length": len1,
+                "sequence_2_length": len2,
                 "sequence_1_count": count1,
-                "sequence_2_count": count2
+                "sequence_2_count": count2,
+                "sequence_1_per_1000_nt": freq1,
+                "sequence_2_per_1000_nt": freq2,
+                "count_difference": count1 - count2
             })
 
     return pd.DataFrame(comparison_data)

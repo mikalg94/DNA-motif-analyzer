@@ -2,6 +2,7 @@ from src.motif_analysis import (
     build_statistics_dataframe,
     compare_sequences,
     count_motif_occurrences,
+    count_motif_in_segments,
     find_motif_positions,
     segment_sequence,
 )
@@ -11,6 +12,12 @@ def test_find_motif_positions():
     sequence = "ATGCGTATGCGTATG"
     motif = "ATG"
     assert find_motif_positions(sequence, motif) == [0, 6, 12]
+
+
+def test_find_overlapping_motif_positions():
+    sequence = "ATATA"
+    motif = "ATA"
+    assert find_motif_positions(sequence, motif) == [0, 2]
 
 
 def test_count_motif_occurrences():
@@ -24,12 +31,22 @@ def test_segment_sequence():
     assert segment_sequence(sequence, 4) == ["ATGC", "GTAT", "GCGT"]
 
 
+def test_count_motif_in_segments():
+    sequence = "ATGAAATGCCATG"
+    motif = "ATG"
+    counts = count_motif_in_segments(sequence, motif, segment_length=5)
+    assert counts == [1, 1, 1]
+
+
 def test_build_statistics_dataframe():
     sequence = "ATGATGATG"
     motif = "ATG"
     df = build_statistics_dataframe(sequence, motif, segment_length=3)
+
     assert len(df) == 3
     assert df["motif_count"].sum() == 3
+    assert "motif_positions" in df.columns
+    assert "segment_length" in df.columns
 
 
 def test_compare_sequences():
@@ -42,4 +59,7 @@ def test_compare_sequences():
     assert "motif" in df.columns
     assert "sequence_1_count" in df.columns
     assert "sequence_2_count" in df.columns
+    assert "sequence_1_per_1000_nt" in df.columns
+    assert "sequence_2_per_1000_nt" in df.columns
+    assert "count_difference" in df.columns
     assert len(df) == 2
