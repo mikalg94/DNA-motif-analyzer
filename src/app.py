@@ -29,10 +29,20 @@ class App:
         self.root = root
         self.root.title("DNA Motif Analyzer")
         self.root.geometry("1000x900")
+        self.root.resizable(True, True)
 
-        # Canvas + scrollbar (scroll całego okna)
-        self.main_canvas = tk.Canvas(self.scrollable_frame)
-        self.main_scrollbar = tk.Scrollbar(self.scrollable_frame, orient="vertical", command=self.main_canvas.yview)
+        self.file_path = None
+        self.file_path_2 = None
+        self.sequence = ""
+        self.sequence_2 = ""
+
+        self.last_results = []
+        self.last_statistics_df = None
+        self.last_selected_motif = None
+        self.last_comparison_df = None
+
+        self.main_canvas = tk.Canvas(self.root)
+        self.main_scrollbar = tk.Scrollbar(self.root, orient="vertical", command=self.main_canvas.yview)
 
         self.scrollable_frame = tk.Frame(self.main_canvas)
 
