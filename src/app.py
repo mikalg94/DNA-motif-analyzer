@@ -9,8 +9,7 @@ from src.motif_analysis import (
 )
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import normalize_motifs
-from src.export_utils import export_results_to_csv, plot_motif_distribution, export_report_to_pdf
-
+from src.export_utils import export_results_to_csv, plot_motif_distribution, export_report_to_pdf, plot_motif_positions
 
 class App:
     def __init__(self, root):
@@ -91,6 +90,9 @@ class App:
 
         self.show_plot_button = tk.Button(root, text="Show Plot", command=self.show_plot)
         self.show_plot_button.pack(pady=5)
+
+        self.show_positions_button = tk.Button(root, text="Show Motif Positions", command=self.show_positions_plot)
+        self.show_positions_button.pack(pady=5)
 
         self.save_plot_button = tk.Button(root, text="Save Plot as PNG", command=self.save_plot)
         self.save_plot_button.pack(pady=5)
@@ -260,6 +262,16 @@ class App:
             plot_motif_distribution(self.last_statistics_df, self.last_selected_motif, show_plot=True)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate plot: {e}")
+
+    def show_positions_plot(self):
+        if not self.last_results or not self.sequence:
+            messagebox.showerror("Error", "No motif analysis results available.")
+            return
+
+        try:
+            plot_motif_positions(self.last_results, len(self.sequence), show_plot=True)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate motif position plot: {e}")
 
     def save_plot(self):
         if self.last_statistics_df is None or self.last_selected_motif is None:

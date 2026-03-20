@@ -19,6 +19,35 @@ def plot_motif_distribution(df, motif, output_path=None, show_plot=True):
         plt.close()
 
 
+def plot_motif_positions(results, sequence_length, output_path=None, show_plot=True):
+    plt.figure(figsize=(10, 4))
+
+    y_level = 1
+    for result in results:
+        positions = result["positions"]
+        motif = result["motif"]
+
+        if positions:
+            plt.scatter(positions, [y_level] * len(positions), label=motif)
+
+        y_level += 1
+
+    plt.xlim(0, sequence_length)
+    plt.xlabel("Position in sequence")
+    plt.ylabel("Motif index")
+    plt.title("Motif positions on DNA sequence axis")
+    plt.legend()
+    plt.tight_layout()
+
+    if output_path:
+        plt.savefig(output_path)
+
+    if show_plot:
+        plt.show()
+    else:
+        plt.close()
+
+
 def export_results_to_csv(df, output_path):
     df.to_csv(output_path, index=False)
 
