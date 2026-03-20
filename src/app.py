@@ -239,7 +239,11 @@ class App:
         if not segment_text:
             raise ValueError("Segment length cannot be empty.")
 
-        segment_length = int(segment_text)
+        try:
+            segment_length = int(segment_text)
+        except ValueError:
+            raise ValueError("Segment length must be an integer.")
+
         if segment_length <= 0:
             raise ValueError("Segment length must be a positive integer.")
 
