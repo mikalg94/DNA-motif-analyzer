@@ -40,107 +40,120 @@ class App:
         self.last_selected_motif = None
         self.last_comparison_df = None
 
-        self.title_label = tk.Label(root, text="DNA Motif Analyzer", font=("Arial", 16))
+        self.title_label = tk.Label(root, text="DNA Motif Analyzer", font=("Arial", 18, "bold"))
         self.title_label.pack(pady=10)
 
-        self.file_button = tk.Button(root, text="Choose first sequence file", command=self.choose_file)
-        self.file_button.pack(pady=5)
+        self.files_frame = tk.LabelFrame(root, text="Sequence files", padx=10, pady=10)
+        self.files_frame.pack(fill="x", padx=15, pady=5)
 
-        self.file_label = tk.Label(root, text="No first file selected")
-        self.file_label.pack(pady=5)
+        self.file_button = tk.Button(self.files_frame, text="Choose first sequence file", command=self.choose_file, width=25)
+        self.file_button.pack(pady=3)
 
-        self.file_button_2 = tk.Button(root, text="Choose second sequence file", command=self.choose_file_2)
-        self.file_button_2.pack(pady=5)
+        self.file_label = tk.Label(self.files_frame, text="No first file selected")
+        self.file_label.pack(pady=3)
 
-        self.file_label_2 = tk.Label(root, text="No second file selected")
-        self.file_label_2.pack(pady=5)
+        self.file_button_2 = tk.Button(self.files_frame, text="Choose second sequence file", command=self.choose_file_2, width=25)
+        self.file_button_2.pack(pady=3)
 
-        self.ncbi_label = tk.Label(root, text="First NCBI accession ID:")
-        self.ncbi_label.pack(pady=5)
+        self.file_label_2 = tk.Label(self.files_frame, text="No second file selected")
+        self.file_label_2.pack(pady=3)
 
-        self.ncbi_entry = tk.Entry(root, width=30)
-        self.ncbi_entry.pack(pady=5)
+        self.ncbi_frame = tk.LabelFrame(root, text="NCBI download", padx=10, pady=10)
+        self.ncbi_frame.pack(fill="x", padx=15, pady=5)
 
-        self.ncbi_label_2 = tk.Label(root, text="Second NCBI accession ID:")
-        self.ncbi_label_2.pack(pady=5)
+        self.ncbi_label = tk.Label(self.ncbi_frame, text="First NCBI accession ID:")
+        self.ncbi_label.pack(pady=3)
 
-        self.ncbi_entry_2 = tk.Entry(root, width=30)
-        self.ncbi_entry_2.pack(pady=5)
+        self.ncbi_entry = tk.Entry(self.ncbi_frame, width=35)
+        self.ncbi_entry.pack(pady=3)
 
-        self.email_label = tk.Label(root, text="Email for NCBI:")
-        self.email_label.pack(pady=5)
+        self.ncbi_label_2 = tk.Label(self.ncbi_frame, text="Second NCBI accession ID:")
+        self.ncbi_label_2.pack(pady=3)
 
-        self.email_entry = tk.Entry(root, width=30)
-        self.email_entry.pack(pady=5)
+        self.ncbi_entry_2 = tk.Entry(self.ncbi_frame, width=35)
+        self.ncbi_entry_2.pack(pady=3)
 
-        self.fetch_button = tk.Button(root, text="Fetch first from NCBI", command=self.fetch_from_ncbi)
-        self.fetch_button.pack(pady=5)
+        self.email_label = tk.Label(self.ncbi_frame, text="Email for NCBI:")
+        self.email_label.pack(pady=3)
 
-        self.fetch_button_2 = tk.Button(root, text="Fetch second from NCBI", command=self.fetch_from_ncbi_2)
-        self.fetch_button_2.pack(pady=5)
+        self.email_entry = tk.Entry(self.ncbi_frame, width=35)
+        self.email_entry.pack(pady=3)
 
-        self.motif_label = tk.Label(root, text="Enter motifs separated by commas:")
-        self.motif_label.pack(pady=5)
+        self.fetch_button = tk.Button(self.ncbi_frame, text="Fetch first from NCBI", command=self.fetch_from_ncbi, width=25)
+        self.fetch_button.pack(pady=3)
 
-        self.motif_entry = tk.Entry(root, width=40)
-        self.motif_entry.pack(pady=5)
+        self.fetch_button_2 = tk.Button(self.ncbi_frame, text="Fetch second from NCBI", command=self.fetch_from_ncbi_2, width=25)
+        self.fetch_button_2.pack(pady=3)
 
-        self.selected_motif_label = tk.Label(root, text="Select motif for plot/PDF:")
-        self.selected_motif_label.pack(pady=5)
+        self.analysis_frame = tk.LabelFrame(root, text="Analysis settings", padx=10, pady=10)
+        self.analysis_frame.pack(fill="x", padx=15, pady=5)
+
+        self.motif_label = tk.Label(self.analysis_frame, text="Enter motifs separated by commas:")
+        self.motif_label.pack(pady=3)
+
+        self.motif_entry = tk.Entry(self.analysis_frame, width=45)
+        self.motif_entry.pack(pady=3)
+
+        self.selected_motif_label = tk.Label(self.analysis_frame, text="Select motif for plot/PDF:")
+        self.selected_motif_label.pack(pady=3)
 
         self.selected_motif_var = tk.StringVar()
         self.selected_motif_combobox = ttk.Combobox(
-            root,
+            self.analysis_frame,
             textvariable=self.selected_motif_var,
             state="readonly",
-            width=20
+            width=25
         )
-        self.selected_motif_combobox.pack(pady=5)
+        self.selected_motif_combobox.pack(pady=3)
 
-        self.segment_label = tk.Label(root, text="Segment length:")
-        self.segment_label.pack(pady=5)
+        self.segment_label = tk.Label(self.analysis_frame, text="Segment length:")
+        self.segment_label.pack(pady=3)
 
-        self.segment_entry = tk.Entry(root, width=10)
+        self.segment_entry = tk.Entry(self.analysis_frame, width=10)
         self.segment_entry.insert(0, "10")
-        self.segment_entry.pack(pady=5)
+        self.segment_entry.pack(pady=3)
 
-        self.analyze_button = tk.Button(root, text="Analyze", command=self.run_analysis)
-        self.analyze_button.pack(pady=5)
+        self.actions_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10)
+        self.actions_frame.pack(fill="x", padx=15, pady=5)
 
-        self.compare_button = tk.Button(root, text="Compare Sequences", command=self.run_comparison)
-        self.compare_button.pack(pady=5)
+        self.analyze_button = tk.Button(self.actions_frame, text="Analyze", command=self.run_analysis, width=25)
+        self.analyze_button.pack(pady=3)
 
-        self.export_csv_button = tk.Button(root, text="Export CSV", command=self.export_csv)
-        self.export_csv_button.pack(pady=5)
+        self.compare_button = tk.Button(self.actions_frame, text="Compare Sequences", command=self.run_comparison, width=25)
+        self.compare_button.pack(pady=3)
 
-        self.show_plot_button = tk.Button(root, text="Show Distribution Plot", command=self.show_plot)
-        self.show_plot_button.pack(pady=5)
+        self.export_csv_button = tk.Button(self.actions_frame, text="Export CSV", command=self.export_csv, width=25)
+        self.export_csv_button.pack(pady=3)
 
-        self.show_positions_button = tk.Button(root, text="Show Motif Positions", command=self.show_positions_plot)
-        self.show_positions_button.pack(pady=5)
+        self.show_plot_button = tk.Button(self.actions_frame, text="Show Distribution Plot", command=self.show_plot, width=25)
+        self.show_plot_button.pack(pady=3)
+
+        self.show_positions_button = tk.Button(self.actions_frame, text="Show Motif Positions", command=self.show_positions_plot, width=25)
+        self.show_positions_button.pack(pady=3)
 
         self.show_interactive_button = tk.Button(
-            root,
+            self.actions_frame,
             text="Open Interactive Motif Plot",
-            command=self.show_interactive_positions_plot
+            command=self.show_interactive_positions_plot,
+            width=25
         )
-        self.show_interactive_button.pack(pady=5)
+        self.show_interactive_button.pack(pady=3)
 
-        self.save_plot_button = tk.Button(root, text="Save Plot as PNG", command=self.save_plot)
-        self.save_plot_button.pack(pady=5)
+        self.save_plot_button = tk.Button(self.actions_frame, text="Save Plot as PNG", command=self.save_plot, width=25)
+        self.save_plot_button.pack(pady=3)
 
-        self.export_pdf_button = tk.Button(root, text="Export PDF", command=self.export_pdf)
-        self.export_pdf_button.pack(pady=5)
+        self.export_pdf_button = tk.Button(self.actions_frame, text="Export PDF", command=self.export_pdf, width=25)
+        self.export_pdf_button.pack(pady=3)
 
         self.result_frame = tk.Frame(root)
-        self.result_frame.pack(pady=10, fill="both", expand=True)
+        self.result_frame.pack(fill="both", expand=True, padx=15, pady=10)
 
         self.result_scrollbar = tk.Scrollbar(self.result_frame)
         self.result_scrollbar.pack(side="right", fill="y")
 
         self.result_text = tk.Text(
             self.result_frame,
-            height=12,
+            height=8,
             width=110,
             yscrollcommand=self.result_scrollbar.set
         )
