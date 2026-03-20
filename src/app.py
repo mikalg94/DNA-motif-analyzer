@@ -61,16 +61,6 @@ class App:
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
 
-        self.file_path = None
-        self.file_path_2 = None
-        self.sequence = ""
-        self.sequence_2 = ""
-
-        self.last_results = []
-        self.last_statistics_df = None
-        self.last_selected_motif = None
-        self.last_comparison_df = None
-
         self.title_label = tk.Label(self.scrollable_frame, text="DNA Motif Analyzer", font=("Arial", 18, "bold"))
         self.title_label.pack(pady=10)
 
@@ -349,7 +339,7 @@ class App:
             messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
 
     def _show_results_window(self, title, content):
-        result_window = tk.Toplevel(self.self.scrollable_frame)
+        result_window = tk.Toplevel(self.root)
         result_window.title(title)
         result_window.geometry("1000x700")
         result_window.resizable(True, True)
