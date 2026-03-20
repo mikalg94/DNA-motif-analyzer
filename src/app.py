@@ -60,10 +60,16 @@ class App:
         if self.file_path:
             self.file_label.config(text=self.file_path)
 
-            if self.file_path.endswith(".txt"):
-                self.sequence = load_sequence_from_txt(self.file_path)
-            else:
-                self.sequence = load_sequence_from_fasta(self.file_path)
+            try:
+                if self.file_path.endswith(".txt"):
+                    self.sequence = load_sequence_from_txt(self.file_path)
+                else:
+                    self.sequence = load_sequence_from_fasta(self.file_path)
+
+                messagebox.showinfo("Success", "Sequence loaded successfully.")
+            except Exception as e:
+                self.sequence = ""
+                messagebox.showerror("Error", f"Failed to load sequence: {e}")
 
     def fetch_from_ncbi(self):
         accession_id = self.ncbi_entry.get().strip()
