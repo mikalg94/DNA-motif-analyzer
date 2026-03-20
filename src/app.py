@@ -278,6 +278,30 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
 
+    def _show_results_window(self, title, content):
+        result_window = tk.Toplevel(self.root)
+        result_window.title(title)
+        result_window.geometry("1000x700")
+        result_window.resizable(True, True)
+
+        frame = tk.Frame(result_window)
+        frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side="right", fill="y")
+
+        text_widget = tk.Text(
+            frame,
+            wrap="word",
+            yscrollcommand=scrollbar.set
+        )
+        text_widget.pack(side="left", fill="both", expand=True)
+
+        scrollbar.config(command=text_widget.yview)
+
+        text_widget.insert("1.0", content)
+        text_widget.config(state="disabled")
+
     def run_analysis(self):
         if not self.sequence:
             messagebox.showerror("Error", "Please load a sequence from file or NCBI.")
@@ -304,62 +328,67 @@ class App:
             segment_length
         )
 
-        self.result_text.delete("1.0", tk.END)
-        self.result_text.insert(tk.END, "ANALYSIS RESULTS\n\n")
-        self.result_text.insert(tk.END, f"Sequence loaded: YES\n")
-        self.result_text.insert(tk.END, f"Sequence length: {len(self.sequence)}\n")
-        self.result_text.insert(tk.END, f"Recognized motifs: {', '.join(motifs)}\n")
-        self.result_text.insert(tk.END, f"Segment length: {segment_length}\n\n")
+        output = []
+        output.append("ANALYSIS RESULTS\n")
+        output.append(f"Sequence length: {len(self.sequence)}")
+        output.append(f"Recognized motifs: {', '.join(motifs)}")
+        output.append(f"Segment length: {segment_length}\n")
 
         for result in results:
-            line = (
+            output.append(
                 f"Motif: {result['motif']} | "
                 f"Count: {result['count']} | "
-                f"Positions: {result['positions']}\n"
+                f"Positions: {result['positions']}"
             )
-            self.result_text.insert(tk.END, line)
 
-        self.result_text.insert(tk.END, "\nSegment statistics for selected motif:\n")
-        self.result_text.insert(tk.END, self.last_statistics_df.to_string(index=False))
-        self.result_text.insert(tk.END, "\n")
+        output.append("\nSegment statistics for selected motif:\n")
+        output.append(self.last_statistics_df.to_string(index=False))
 
-        self.result_text.see("1.0")
+        final_text = "\n".join(output)
+
+        self.result_text.delete("1.0", tk.END)
+        self.result_text.insert(tk.END, final_text)
+
+        self._show_results_window("Analysis Results", final_text)
 
     def run_comparison(self):
-        self.result_text.delete("1.0", tk.END)
-        self.result_text.insert(tk.END, "Starting comparison...\n")
-
         if not self.sequence:
             messagebox.showerror("Error", "First sequence is not loaded.")
-            self.result_text.insert(tk.END, "First sequence is missing.\n")
             return
 
         if not self.sequence_2:
             messagebox.showerror("Error", "Second sequence is not loaded.")
-            self.result_text.insert(tk.END, "Second sequence is missing.\n")
             return
 
         try:
             motifs, _ = self._get_motifs_and_segment_length()
-            self.result_text.insert(tk.END, f"Motifs: {motifs}\n")
-            self.result_text.insert(tk.END, f"Sequence 1 length: {len(self.sequence)}\n")
-            self.result_text.insert(tk.END, f"Sequence 2 length: {len(self.sequence_2)}\n")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
 
+        try:
             self.last_comparison_df = compare_sequences(self.sequence, self.sequence_2, motifs)
 
-            self.result_text.insert(tk.END, "\nComparison finished successfully.\n\n")
+            output = []
+            output.append("COMPARISON RESULTS\n")
+            output.append(f"Sequence 1 length: {len(self.sequence)}")
+            output.append(f"Sequence 2 length: {len(self.sequence_2)}")
+            output.append(f"Recognized motifs: {', '.join(motifs)}\n")
 
             if self.last_comparison_df.empty:
-                self.result_text.insert(tk.END, "No comparison data to display.\n")
+                output.append("No comparison data to display.")
             else:
-                self.result_text.insert(tk.END, self.last_comparison_df.to_string(index=False))
-                self.result_text.insert(tk.END, "\n")
+                output.append(self.last_comparison_df.to_string(index=False))
+
+            final_text = "\n".join(output)
+
+            self.result_text.delete("1.0", tk.END)
+            self.result_text.insert(tk.END, final_text)
+
+            self._show_results_window("Comparison Results", final_text)
 
         except Exception as e:
             messagebox.showerror("Error", f"Comparison failed: {e}")
-            self.result_text.insert(tk.END, f"\nComparison failed: {e}\n")
-
-            self.result_text.see("1.0")
 
     def export_csv(self):
         if self.last_statistics_df is None and self.last_comparison_df is None:
