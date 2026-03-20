@@ -5,7 +5,7 @@ from src.io_utils import load_sequence_from_txt, load_sequence_from_fasta
 from src.motif_analysis import analyze_multiple_motifs, build_statistics_dataframe
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import normalize_motifs
-from src.export_utils import export_results_to_csv, plot_motif_distribution
+from src.export_utils import export_results_to_csv, plot_motif_distribution, export_report_to_pdf
 
 
 class App:
@@ -68,6 +68,9 @@ class App:
 
         self.save_plot_button = tk.Button(root, text="Save Plot as PNG", command=self.save_plot)
         self.save_plot_button.pack(pady=5)
+
+        self.export_pdf_button = tk.Button(root, text="Export PDF", command=self.export_pdf)
+        self.export_pdf_button.pack(pady=5)
 
         self.result_text = tk.Text(root, height=20, width=95)
         self.result_text.pack(pady=10)
@@ -202,3 +205,27 @@ class App:
             messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save plot: {e}")
+
+    def export_pdf(self):
+        if self.last_statistics_df is None or self.last_selected_motif is None:
+            messagebox.showerror("Error", "No analysis results available for PDF export.")
+            return
+
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf")]
+        )
+
+        if not output_path:
+            return
+
+        try:
+            export_report_to_pdf(
+                self.last_statistics_df,
+                self.last_selected_motif,
+                len(self.sequence),
+                output_path
+            )
+            messagebox.showinfo("Success", f"PDF report exported to:\n{output_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export PDF: {e}")
