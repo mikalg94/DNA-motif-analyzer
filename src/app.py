@@ -25,7 +25,10 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("DNA Motif Analyzer")
-        self.root.geometry("900x760")
+        self.root.geometry("1000x900")
+        self.root.resizable(True, True)
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
 
         self.file_path = None
         self.file_path_2 = None
@@ -129,8 +132,21 @@ class App:
         self.export_pdf_button = tk.Button(root, text="Export PDF", command=self.export_pdf)
         self.export_pdf_button.pack(pady=5)
 
-        self.result_text = tk.Text(root, height=22, width=110)
-        self.result_text.pack(pady=10)
+        self.result_frame = tk.Frame(root)
+        self.result_frame.pack(pady=10, fill="both", expand=True)
+
+        self.result_scrollbar = tk.Scrollbar(self.result_frame)
+        self.result_scrollbar.pack(side="right", fill="y")
+
+        self.result_text = tk.Text(
+            self.result_frame,
+            height=12,
+            width=110,
+            yscrollcommand=self.result_scrollbar.set
+        )
+        self.result_text.pack(side="left", fill="both", expand=True)
+
+        self.result_scrollbar.config(command=self.result_text.yview)
 
     def _load_sequence_from_path(self, path):
         lowered = path.lower()
@@ -307,6 +323,8 @@ class App:
         self.result_text.insert(tk.END, self.last_statistics_df.to_string(index=False))
         self.result_text.insert(tk.END, "\n")
 
+        self.result_text.see("1.0")
+
     def run_comparison(self):
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, "Starting comparison...\n")
@@ -340,6 +358,8 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Comparison failed: {e}")
             self.result_text.insert(tk.END, f"\nComparison failed: {e}\n")
+
+            self.result_text.see("1.0")
 
     def export_csv(self):
         if self.last_statistics_df is None and self.last_comparison_df is None:
