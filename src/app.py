@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 
 from src.export_utils import (
     export_report_to_pdf,
@@ -77,6 +77,18 @@ class App:
 
         self.motif_entry = tk.Entry(root, width=40)
         self.motif_entry.pack(pady=5)
+
+        self.selected_motif_label = tk.Label(root, text="Select motif for plot/PDF:")
+        self.selected_motif_label.pack(pady=5)
+
+        self.selected_motif_var = tk.StringVar()
+        self.selected_motif_combobox = ttk.Combobox(
+            root,
+            textvariable=self.selected_motif_var,
+            state="readonly",
+            width=20
+        )
+        self.selected_motif_combobox.pack(pady=5)
 
         self.segment_label = tk.Label(root, text="Segment length:")
         self.segment_label.pack(pady=5)
@@ -204,6 +216,25 @@ class App:
 
         return motifs, segment_length
 
+    def _refresh_statistics_for_selected_motif(self):
+        if not self.sequence:
+            raise ValueError("Sequence is not loaded.")
+
+        motif = self.selected_motif_var.get().strip()
+        if not motif:
+            raise ValueError("Please select a motif.")
+
+        segment_text = self.segment_entry.get().strip()
+        if not segment_text:
+            raise ValueError("Segment length cannot be empty.")
+
+        segment_length = int(segment_text)
+        if segment_length <= 0:
+            raise ValueError("Segment length must be a positive integer.")
+
+        self.last_selected_motif = motif
+        self.last_statistics_df = build_statistics_dataframe(self.sequence, motif, segment_length)
+
     def run_analysis(self):
         if not self.sequence:
             messagebox.showerror("Error", "Please load a sequence from file or NCBI.")
@@ -218,9 +249,13 @@ class App:
         results = analyze_multiple_motifs(self.sequence, motifs)
 
         self.last_results = results
-        self.last_selected_motif = motifs[0]
-        self.last_statistics_df = build_statistics_dataframe(self.sequence, motifs[0], segment_length)
         self.last_comparison_df = None
+
+        self.selected_motif_combobox["values"] = motifs
+        self.selected_motif_combobox.set(motifs[0])
+
+        self.last_selected_motif = motifs[0]
+        self.last_statistics_df = build_statistics_dataframe(self.sequence, self.last_selected_motif, segment_length)
 
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, f"Sequence length: {len(self.sequence)}\n")
@@ -276,11 +311,12 @@ class App:
             messagebox.showerror("Error", f"Failed to export CSV: {e}")
 
     def show_plot(self):
-        if self.last_statistics_df is None or self.last_selected_motif is None:
+        if not self.last_results or not self.sequence:
             messagebox.showerror("Error", "No analysis results available for plotting.")
             return
 
         try:
+            self._refresh_statistics_for_selected_motif()
             plot_motif_distribution(self.last_statistics_df, self.last_selected_motif, show_plot=True)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate plot: {e}")
@@ -296,7 +332,7 @@ class App:
             messagebox.showerror("Error", f"Failed to generate motif position plot: {e}")
 
     def save_plot(self):
-        if self.last_statistics_df is None or self.last_selected_motif is None:
+        if not self.last_results or not self.sequence:
             messagebox.showerror("Error", "No analysis results available for saving.")
             return
 
@@ -309,6 +345,7 @@ class App:
             return
 
         try:
+            self._refresh_statistics_for_selected_motif()
             plot_motif_distribution(
                 self.last_statistics_df,
                 self.last_selected_motif,
@@ -320,7 +357,7 @@ class App:
             messagebox.showerror("Error", f"Failed to save plot: {e}")
 
     def export_pdf(self):
-        if self.last_statistics_df is None or self.last_selected_motif is None:
+        if not self.last_results or not self.sequence:
             messagebox.showerror("Error", "No analysis results available for PDF export.")
             return
 
@@ -333,6 +370,7 @@ class App:
             return
 
         try:
+            self._refresh_statistics_for_selected_motif()
             export_report_to_pdf(
                 self.last_statistics_df,
                 self.last_selected_motif,
