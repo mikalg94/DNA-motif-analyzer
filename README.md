@@ -36,6 +36,12 @@ Aplikacja umożliwia:
 - interaktywna wizualizacja pozycji motywów,
 - eksport CSV i PDF z wykresem.
 
+## Uwagi końcowe
+
+- Wyniki analizy oraz porównania wyświetlane są w osobnych oknach z możliwością przewijania.
+- Motywy nakładające się na siebie są poprawnie wykrywane.
+- Statystyki segmentowe liczone są na podstawie pozycji startowej motywów.
+
 ## Technologie
 - Python
 - Tkinter
