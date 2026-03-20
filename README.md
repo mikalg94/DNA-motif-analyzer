@@ -36,6 +36,11 @@ Aplikacja umożliwia:
 - interaktywna wizualizacja pozycji motywów,
 - eksport CSV i PDF z wykresem.
 
+## Dodatkowe ulepszenia
+- uporządkowany interfejs graficzny podzielony na sekcje,
+- wykres podsumowujący liczbę wystąpień wielu motywów jednocześnie,
+- historia analiz i porównań zapisywana do pliku CSV.
+
 ## Uwagi końcowe
 
 - Wyniki analizy oraz porównania wyświetlane są w osobnych oknach z możliwością przewijania.
