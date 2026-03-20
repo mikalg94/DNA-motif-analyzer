@@ -307,6 +307,8 @@ class App:
 
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, "Sequence comparison results:\n\n")
+        self.result_text.insert(tk.END, f"Sequence 1 length: {len(self.sequence)}\n")
+        self.result_text.insert(tk.END, f"Sequence 2 length: {len(self.sequence_2)}\n\n")
         self.result_text.insert(tk.END, self.last_comparison_df.to_string(index=False))
         self.result_text.insert(tk.END, "\n")
 
