@@ -1,6 +1,7 @@
+from io import StringIO
+
 from Bio import Entrez
 from Bio import SeqIO
-from io import StringIO
 
 from src.validation_utils import validate_dna_sequence
 
