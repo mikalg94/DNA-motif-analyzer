@@ -18,68 +18,38 @@ Projekt łączy elementy programowania w Pythonie z podstawami bioinformatyki.
 
 ## Funkcjonalności
 
-### Wczytywanie danych
-- obsługa plików **TXT**
-- obsługa plików **FASTA**
-- pobieranie sekwencji z **NCBI GenBank**
-
-### Analiza motywów
-- wyszukiwanie jednego motywu
-- wyszukiwanie wielu motywów jednocześnie
+### Aktualnie zaimplementowane
+- obsługa plików TXT
+- obsługa plików FASTA
+- pobieranie sekwencji z NCBI GenBank
+- wyszukiwanie jednego lub wielu motywów
 - określanie pozycji wystąpień
 - zliczanie liczby wystąpień
-
-### Analiza statystyczna
 - podział sekwencji na segmenty
-- liczenie wystąpień motywów w segmentach
-- tworzenie zestawień statystycznych (Pandas)
+- generowanie statystyk segmentowych
 
-### Wizualizacja
-- wykres słupkowy rozmieszczenia motywów
-- generowanie wykresów przy użyciu Matplotlib
-
-### Eksport danych
-- zapis wyników do pliku **CSV**
-- zapis wykresów do **PNG**
-- generowanie raportu **PDF**
-
-### Interfejs graficzny
-- wybór pliku
-- wpisywanie motywów
-- uruchamianie analizy
-- wyświetlanie wyników
+### Rozwijane funkcje
+- eksport wyników do CSV
+- zapis wykresów do PNG
+- generowanie raportów PDF
+- porównanie dwóch sekwencji
+- rozszerzona wizualizacja rozmieszczenia motywów
 
 ---
 
 ## Technologie
 
-Projekt wykorzystuje następujące technologie:
-
 - Python
-- Tkinter (GUI)
-- Pandas (analiza danych)
-- NumPy (operacje numeryczne)
-- Matplotlib (wizualizacja)
-- Biopython (NCBI API)
+- Tkinter
+- Pandas
+- NumPy
+- Matplotlib
+- Biopython
 
 ---
 
-## Struktura projektu
-dna_motif_analyzer_project
-│
-├── main.py
-├── README.md
-├── requirements.txt
-│
-├── src
-│   ├── app.py
-│   ├── io_utils.py
-│   ├── motif_analysis.py
-│   ├── export_utils.py
-│   └── ncbi_utils.py
-│
-├── data
-│   ├── example_sequence.txt
-│   └── example_sequence.fasta
-│
-└── results
+## Uruchomienie projektu
+
+```bash
+pip install -r requirements.txt
+python main.py
