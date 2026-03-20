@@ -1,12 +1,16 @@
+import os
+import webbrowser
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from src.export_utils import (
     export_report_to_pdf,
     export_results_to_csv,
+    interactive_motif_positions,
     plot_motif_distribution,
     plot_motif_positions,
 )
+
 from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
 from src.motif_analysis import (
     analyze_multiple_motifs,
@@ -111,6 +115,13 @@ class App:
 
         self.show_positions_button = tk.Button(root, text="Show Motif Positions", command=self.show_positions_plot)
         self.show_positions_button.pack(pady=5)
+
+        self.show_interactive_button = tk.Button(
+            root,
+            text="Open Interactive Motif Plot",
+            command=self.show_interactive_positions_plot
+        )
+        self.show_interactive_button.pack(pady=5)
 
         self.save_plot_button = tk.Button(root, text="Save Plot as PNG", command=self.save_plot)
         self.save_plot_button.pack(pady=5)
@@ -234,6 +245,18 @@ class App:
 
         self.last_selected_motif = motif
         self.last_statistics_df = build_statistics_dataframe(self.sequence, motif, segment_length)
+
+    def show_interactive_positions_plot(self):
+        if not self.last_results or not self.sequence:
+            messagebox.showerror("Error", "No motif analysis results available.")
+            return
+
+        try:
+            os.makedirs("results", exist_ok=True)
+            output_html = interactive_motif_positions(self.last_results, len(self.sequence))
+            webbrowser.open(output_html)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
 
     def run_analysis(self):
         if not self.sequence:

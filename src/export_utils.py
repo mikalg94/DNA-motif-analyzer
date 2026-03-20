@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import plotly.express as px
+import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -53,6 +55,40 @@ def plot_motif_positions(results, sequence_length, output_path=None, show_plot=T
         plt.close()
 
 
+def interactive_motif_positions(results, sequence_length, output_html="results/interactive_motif_positions.html"):
+    rows = []
+
+    for result in results:
+        motif = result["motif"]
+        for position in result["positions"]:
+            rows.append({
+                "motif": motif,
+                "position": position,
+                "sequence_length": sequence_length
+            })
+
+    if not rows:
+        df = pd.DataFrame([{
+            "motif": "No motifs found",
+            "position": 0,
+            "sequence_length": sequence_length
+        }])
+    else:
+        df = pd.DataFrame(rows)
+
+    fig = px.scatter(
+        df,
+        x="position",
+        y="motif",
+        hover_data=["position"],
+        title="Interactive motif positions on sequence axis"
+    )
+
+    fig.update_layout(xaxis_title="Position in sequence", yaxis_title="Motif")
+    fig.write_html(output_html)
+    return output_html
+
+
 def export_results_to_csv(df, output_path):
     df.to_csv(output_path, index=False)
 
@@ -67,10 +103,22 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
             f"Motif: {motif}\n"
             f"Sequence length: {sequence_length}\n"
             f"Total motif count: {df['motif_count'].sum()}\n"
-            f"Number of segments: {len(df)}\n"
+            f"Number of segments: {len(df)}\n\n"
+            f"Segment statistics:\n"
         )
 
-        ax.text(0.1, 0.9, summary_text, fontsize=12, va="top")
+        segment_lines = []
+        for _, row in df.iterrows():
+            segment_lines.append(
+                f"Segment {row['segment_id']}: "
+                f"{row['start']}-{row['end']}, "
+                f"count={row['motif_count']}, "
+                f"positions={row['motif_positions']}"
+            )
+
+        full_text = summary_text + "\n".join(segment_lines[:25])
+
+        ax.text(0.05, 0.95, full_text, fontsize=10, va="top")
         pdf.savefig(fig)
         plt.close(fig)
 
