@@ -328,7 +328,35 @@ class App:
         try:
             os.makedirs("results", exist_ok=True)
             output_html = interactive_motif_positions(self.last_results, len(self.sequence))
-            webbrowser.open(output_html)
+
+            info_window = tk.Toplevel(self.root)
+            info_window.title("Interactive Motif Plot")
+            info_window.geometry("600x220")
+            info_window.resizable(False, False)
+
+            label1 = tk.Label(
+                info_window,
+                text="Interactive motif plot has been created successfully.",
+                font=("Arial", 11, "bold")
+            )
+            label1.pack(pady=10)
+
+            label2 = tk.Label(
+                info_window,
+                text=f"Saved file:\n{output_html}",
+                wraplength=550,
+                justify="center"
+            )
+            label2.pack(pady=10)
+
+            open_button = tk.Button(
+                info_window,
+                text="Open in browser",
+                command=lambda: webbrowser.open(output_html),
+                width=20
+            )
+            open_button.pack(pady=10)
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
 
