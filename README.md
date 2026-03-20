@@ -1,54 +1,78 @@
 # DNA Motif Analyzer
 
-DNA Motif Analyzer to aplikacja napisana w Pythonie służąca do analizy sekwencji DNA oraz wykrywania wybranych motywów sekwencyjnych, takich jak ATG, TATA czy CGCG.
+DNA Motif Analyzer to aplikacja napisana w Pythonie do analizy sekwencji DNA i wyszukiwania motywów takich jak ATG, TATA czy CGCG.
 
 ## Opis projektu
 
-Celem projektu jest stworzenie narzędzia umożliwiającego:
-- wczytywanie sekwencji DNA z plików,
-- wyszukiwanie motywów w sekwencji,
-- analizę statystyczną ich występowania,
-- wizualizację rozmieszczenia motywów,
-- eksport wyników,
-- pobieranie danych z bazy NCBI.
-
-Projekt łączy elementy programowania w Pythonie z podstawami bioinformatyki.
-
----
-
-## Funkcjonalności
-
-### Aktualnie zaimplementowane
-- obsługa plików TXT,
-- obsługa plików FASTA,
-- pobieranie sekwencji z NCBI GenBank,
+Aplikacja umożliwia:
+- wczytywanie sekwencji DNA z plików TXT, FASTA i FA,
+- pobieranie sekwencji z bazy NCBI,
 - wyszukiwanie jednego lub wielu motywów,
-- określanie pozycji wystąpień,
+- wyznaczanie pozycji wystąpień motywów,
 - zliczanie liczby wystąpień,
-- podział sekwencji na segmenty,
-- generowanie statystyk segmentowych,
+- analizę segmentową sekwencji,
+- porównanie dwóch sekwencji,
 - eksport wyników do CSV,
 - zapis wykresów do PNG,
 - generowanie raportów PDF,
-- porównanie dwóch sekwencji,
-- wizualizacja pozycji motywów na osi sekwencji.
+- interaktywną wizualizację pozycji motywów.
 
----
+## Zaimplementowane funkcjonalności
+
+### Wariant minimalny
+- wczytywanie sekwencji z pliku FASTA/TXT,
+- wyszukiwanie motywu i jego pozycji,
+- obliczanie liczby wystąpień,
+- segmentacja sekwencji,
+- analiza statystyczna z użyciem Pandas,
+- wykres słupkowy rozmieszczenia motywów,
+- GUI do wyboru pliku i motywu,
+- eksport wyników do CSV.
+
+### Wariant rozszerzony
+- pobieranie sekwencji z NCBI,
+- obsługa wielu motywów jednocześnie,
+- porównanie dwóch sekwencji,
+- interaktywna wizualizacja pozycji motywów,
+- eksport CSV i PDF z wykresem.
 
 ## Technologie
-
 - Python
 - Tkinter
 - Pandas
 - NumPy
 - Matplotlib
+- Plotly
 - Biopython
 - Pytest
 
----
+## Struktura projektu
 
-## Uruchomienie projektu
-
-```bash
-pip install -r requirements.txt
-python main.py
+```text
+dna_motif_analyzer_project
+│
+├── main.py
+├── README.md
+├── requirements.txt
+├── .gitignore
+│
+├── src
+│   ├── __init__.py
+│   ├── app.py
+│   ├── io_utils.py
+│   ├── motif_analysis.py
+│   ├── export_utils.py
+│   ├── ncbi_utils.py
+│   └── validation_utils.py
+│
+├── data
+│   ├── example_sequence.txt
+│   └── example_sequence.fasta
+│
+├── results
+│   └── .gitkeep
+│
+└── tests
+    ├── test_io_utils.py
+    ├── test_motif_analysis.py
+    └── test_validation_utils.py
