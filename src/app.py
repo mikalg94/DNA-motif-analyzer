@@ -1,5 +1,6 @@
 import os
 import webbrowser
+import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -589,8 +590,6 @@ class App:
             return
 
         try:
-            import pandas as pd
-
             history_df = pd.read_csv(history_path)
             history_text = history_df.to_string(index=False)
             self._show_results_window("Analysis History", history_text)
