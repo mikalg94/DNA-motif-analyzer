@@ -3,8 +3,12 @@ import webbrowser
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 from src.export_utils import (
+    create_motif_distribution_figure,
+    create_motif_positions_figure,
+    create_multiple_motifs_summary_figure,
     export_report_to_pdf,
     export_results_to_csv,
     interactive_motif_positions,
@@ -334,9 +338,26 @@ class App:
             return
 
         try:
-            plot_multiple_motifs_summary(self.last_results, show_plot=True)
+            fig = create_multiple_motifs_summary_figure(self.last_results)
+            self._show_figure_window("Multi-Motif Summary", fig)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
+
+    def _show_figure_window(self, title, fig):
+        plot_window = tk.Toplevel(self.root)
+        plot_window.title(title)
+        plot_window.geometry("950x650")
+        plot_window.resizable(True, True)
+
+        frame = tk.Frame(plot_window)
+        frame.pack(fill="both", expand=True)
+
+        canvas = FigureCanvasTkAgg(fig, master=frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        toolbar = NavigationToolbar2Tk(canvas, frame)
+        toolbar.update()
 
     def _show_results_window(self, title, content):
         result_window = tk.Toplevel(self.root)
@@ -508,7 +529,8 @@ class App:
 
         try:
             self._refresh_statistics_for_selected_motif()
-            plot_motif_distribution(self.last_statistics_df, self.last_selected_motif, show_plot=True)
+            fig = create_motif_distribution_figure(self.last_statistics_df, self.last_selected_motif)
+            self._show_figure_window("Distribution Plot", fig)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate plot: {e}")
 
@@ -518,7 +540,8 @@ class App:
             return
 
         try:
-            plot_motif_positions(self.last_results, len(self.sequence), show_plot=True)
+            fig = create_motif_positions_figure(self.last_results, len(self.sequence))
+            self._show_figure_window("Motif Positions", fig)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate motif position plot: {e}")
 
