@@ -40,6 +40,8 @@ Aplikacja umożliwia:
 - uporządkowany interfejs graficzny podzielony na sekcje,
 - wykres podsumowujący liczbę wystąpień wielu motywów jednocześnie,
 - historia analiz i porównań zapisywana do pliku CSV.
+- wykresy Matplotlib są wyświetlane w osobnych oknach Tkinter z paskiem narzędzi,
+- interaktywny wykres Plotly jest zapisywany do pliku HTML i otwierany z poziomu osobnego okna aplikacji.
 
 ## Uwagi końcowe
 
