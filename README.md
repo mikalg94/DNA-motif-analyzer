@@ -53,3 +53,14 @@ Projekt łączy elementy programowania w Pythonie z podstawami bioinformatyki.
 ```bash
 pip install -r requirements.txt
 python main.py
+```
+
+---
+
+## Testy
+
+Aby uruchomić testy:
+
+```bash
+pytest
+```

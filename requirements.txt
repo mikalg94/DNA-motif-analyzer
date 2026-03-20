@@ -2,3 +2,4 @@ numpy==2.3.3
 pandas
 matplotlib
 biopython
+pytest
