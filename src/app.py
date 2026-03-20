@@ -4,6 +4,7 @@ from tkinter import filedialog, messagebox
 from src.io_utils import load_sequence_from_txt, load_sequence_from_fasta
 from src.motif_analysis import analyze_multiple_motifs
 from src.ncbi_utils import fetch_sequence_from_ncbi
+from src.validation_utils import normalize_motifs
 
 
 class App:
@@ -90,7 +91,12 @@ class App:
             messagebox.showerror("Error", "Please enter at least one motif.")
             return
 
-        motifs = motifs_text.split(",")
+        try:
+            motifs = normalize_motifs(motifs_text.split(","))
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+            return
+
         results = analyze_multiple_motifs(self.sequence, motifs)
 
         self.result_text.delete("1.0", tk.END)
