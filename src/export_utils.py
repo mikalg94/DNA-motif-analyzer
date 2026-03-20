@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import plotly.express as px
+import os
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -148,3 +149,16 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
         plt.tight_layout()
         pdf.savefig(fig)
         plt.close(fig)
+
+def save_analysis_history(entry, output_path="results/analysis_history.csv"):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    new_row = pd.DataFrame([entry])
+
+    if os.path.exists(output_path):
+        existing_df = pd.read_csv(output_path)
+        updated_df = pd.concat([existing_df, new_row], ignore_index=True)
+    else:
+        updated_df = new_row
+
+    updated_df.to_csv(output_path, index=False)

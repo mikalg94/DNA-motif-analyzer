@@ -10,6 +10,7 @@ from src.export_utils import (
     plot_motif_distribution,
     plot_motif_positions,
     plot_multiple_motifs_summary,
+    save_analysis_history,
 )
 
 from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
@@ -21,6 +22,7 @@ from src.motif_analysis import (
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import normalize_motifs
 
+from datetime import datetime
 
 class App:
     def __init__(self, root):
@@ -153,6 +155,14 @@ class App:
 
         self.export_pdf_button = tk.Button(self.actions_frame, text="Export PDF", command=self.export_pdf, width=25)
         self.export_pdf_button.pack(pady=3)
+
+        self.show_history_button = tk.Button(
+            self.actions_frame,
+            text="Show Analysis History",
+            command=self.show_analysis_history,
+            width=25
+        )
+        self.show_history_button.pack(pady=3)
 
         self.result_frame = tk.Frame(root)
         self.result_frame.pack(fill="both", expand=True, padx=15, pady=10)
@@ -378,6 +388,17 @@ class App:
 
         final_text = "\n".join(output)
 
+        history_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "operation": "analysis",
+            "sequence_1_length": len(self.sequence),
+            "sequence_2_length": "",
+            "motifs": ", ".join(motifs),
+            "segment_length": segment_length,
+            "details": "; ".join([f"{result['motif']}={result['count']}" for result in results])
+        }
+        save_analysis_history(history_entry)
+
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, final_text)
 
@@ -413,6 +434,23 @@ class App:
                 output.append(self.last_comparison_df.to_string(index=False))
 
             final_text = "\n".join(output)
+
+            comparison_details = []
+            for _, row in self.last_comparison_df.iterrows():
+                comparison_details.append(
+                    f"{row['motif']}: seq1={row['sequence_1_count']}, seq2={row['sequence_2_count']}"
+                )
+
+            history_entry = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "operation": "comparison",
+                "sequence_1_length": len(self.sequence),
+                "sequence_2_length": len(self.sequence_2),
+                "motifs": ", ".join(motifs),
+                "segment_length": "",
+                "details": "; ".join(comparison_details)
+            }
+            save_analysis_history(history_entry)
 
             self.result_text.delete("1.0", tk.END)
             self.result_text.insert(tk.END, final_text)
@@ -515,3 +553,19 @@ class App:
             messagebox.showinfo("Success", f"PDF report exported to:\n{output_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export PDF: {e}")
+
+    def show_analysis_history(self):
+        history_path = "results/analysis_history.csv"
+
+        if not os.path.exists(history_path):
+            messagebox.showinfo("History", "No analysis history available yet.")
+            return
+
+        try:
+            import pandas as pd
+
+            history_df = pd.read_csv(history_path)
+            history_text = history_df.to_string(index=False)
+            self._show_results_window("Analysis History", history_text)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open history: {e}")
