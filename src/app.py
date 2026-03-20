@@ -29,7 +29,24 @@ class App:
         self.root = root
         self.root.title("DNA Motif Analyzer")
         self.root.geometry("1000x900")
-        self.root.resizable(True, True)
+
+        # Canvas + scrollbar (scroll całego okna)
+        self.main_canvas = tk.Canvas(self.scrollable_frame)
+        self.main_scrollbar = tk.Scrollbar(self.scrollable_frame, orient="vertical", command=self.main_canvas.yview)
+
+        self.scrollable_frame = tk.Frame(self.main_canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
+        )
+
+        self.main_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.main_canvas.configure(yscrollcommand=self.main_scrollbar.set)
+
+        self.main_canvas.pack(side="left", fill="both", expand=True)
+        self.main_scrollbar.pack(side="right", fill="y")
+
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
 
@@ -43,10 +60,10 @@ class App:
         self.last_selected_motif = None
         self.last_comparison_df = None
 
-        self.title_label = tk.Label(root, text="DNA Motif Analyzer", font=("Arial", 18, "bold"))
+        self.title_label = tk.Label(self.scrollable_frame, text="DNA Motif Analyzer", font=("Arial", 18, "bold"))
         self.title_label.pack(pady=10)
 
-        self.files_frame = tk.LabelFrame(root, text="Sequence files", padx=10, pady=10)
+        self.files_frame = tk.LabelFrame(self.scrollable_frame, text="Sequence files", padx=10, pady=10)
         self.files_frame.pack(fill="x", padx=15, pady=5)
 
         self.file_button = tk.Button(self.files_frame, text="Choose first sequence file", command=self.choose_file, width=25)
@@ -61,7 +78,7 @@ class App:
         self.file_label_2 = tk.Label(self.files_frame, text="No second file selected")
         self.file_label_2.pack(pady=3)
 
-        self.ncbi_frame = tk.LabelFrame(root, text="NCBI download", padx=10, pady=10)
+        self.ncbi_frame = tk.LabelFrame(self.scrollable_frame, text="NCBI download", padx=10, pady=10)
         self.ncbi_frame.pack(fill="x", padx=15, pady=5)
 
         self.ncbi_label = tk.Label(self.ncbi_frame, text="First NCBI accession ID:")
@@ -88,7 +105,7 @@ class App:
         self.fetch_button_2 = tk.Button(self.ncbi_frame, text="Fetch second from NCBI", command=self.fetch_from_ncbi_2, width=25)
         self.fetch_button_2.pack(pady=3)
 
-        self.analysis_frame = tk.LabelFrame(root, text="Analysis settings", padx=10, pady=10)
+        self.analysis_frame = tk.LabelFrame(self.scrollable_frame, text="Analysis settings", padx=10, pady=10)
         self.analysis_frame.pack(fill="x", padx=15, pady=5)
 
         self.motif_label = tk.Label(self.analysis_frame, text="Enter motifs separated by commas:")
@@ -116,7 +133,7 @@ class App:
         self.segment_entry.insert(0, "10")
         self.segment_entry.pack(pady=3)
 
-        self.actions_frame = tk.LabelFrame(root, text="Actions", padx=10, pady=10)
+        self.actions_frame = tk.LabelFrame(self.scrollable_frame, text="Actions", padx=10, pady=10)
         self.actions_frame.pack(fill="x", padx=15, pady=5)
 
         self.analyze_button = tk.Button(self.actions_frame, text="Analyze", command=self.run_analysis, width=25)
@@ -164,7 +181,7 @@ class App:
         )
         self.show_history_button.pack(pady=3)
 
-        self.result_frame = tk.Frame(root)
+        self.result_frame = tk.Frame(self.scrollable_frame)
         self.result_frame.pack(fill="both", expand=True, padx=15, pady=10)
 
         self.result_scrollbar = tk.Scrollbar(self.result_frame)
@@ -321,7 +338,7 @@ class App:
             messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
 
     def _show_results_window(self, title, content):
-        result_window = tk.Toplevel(self.root)
+        result_window = tk.Toplevel(self.self.scrollable_frame)
         result_window.title(title)
         result_window.geometry("1000x700")
         result_window.resizable(True, True)
