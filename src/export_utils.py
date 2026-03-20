@@ -54,6 +54,24 @@ def plot_motif_positions(results, sequence_length, output_path=None, show_plot=T
     else:
         plt.close()
 
+def plot_multiple_motifs_summary(results, output_path=None, show_plot=True):
+    motifs = [result["motif"] for result in results]
+    counts = [result["count"] for result in results]
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(motifs, counts)
+    plt.xlabel("Motif")
+    plt.ylabel("Count")
+    plt.title("Summary of motif occurrences")
+    plt.tight_layout()
+
+    if output_path:
+        plt.savefig(output_path)
+
+    if show_plot:
+        plt.show()
+    else:
+        plt.close()
 
 def interactive_motif_positions(results, sequence_length, output_html="results/interactive_motif_positions.html"):
     rows = []

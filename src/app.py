@@ -9,6 +9,7 @@ from src.export_utils import (
     interactive_motif_positions,
     plot_motif_distribution,
     plot_motif_positions,
+    plot_multiple_motifs_summary,
 )
 
 from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
@@ -127,6 +128,14 @@ class App:
 
         self.show_plot_button = tk.Button(self.actions_frame, text="Show Distribution Plot", command=self.show_plot, width=25)
         self.show_plot_button.pack(pady=3)
+
+        self.show_multi_plot_button = tk.Button(
+            self.actions_frame,
+            text="Show Multi-Motif Summary",
+            command=self.show_multi_motif_plot,
+            width=25
+        )
+        self.show_multi_plot_button.pack(pady=3)
 
         self.show_positions_button = tk.Button(self.actions_frame, text="Show Motif Positions", command=self.show_positions_plot, width=25)
         self.show_positions_button.pack(pady=3)
@@ -290,6 +299,16 @@ class App:
             webbrowser.open(output_html)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
+
+    def show_multi_motif_plot(self):
+        if not self.last_results:
+            messagebox.showerror("Error", "No motif analysis results available.")
+            return
+
+        try:
+            plot_multiple_motifs_summary(self.last_results, show_plot=True)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
 
     def _show_results_window(self, title, content):
         result_window = tk.Toplevel(self.root)
