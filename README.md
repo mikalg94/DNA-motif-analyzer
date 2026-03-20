@@ -19,21 +19,19 @@ Projekt łączy elementy programowania w Pythonie z podstawami bioinformatyki.
 ## Funkcjonalności
 
 ### Aktualnie zaimplementowane
-- obsługa plików TXT
-- obsługa plików FASTA
-- pobieranie sekwencji z NCBI GenBank
-- wyszukiwanie jednego lub wielu motywów
-- określanie pozycji wystąpień
-- zliczanie liczby wystąpień
-- podział sekwencji na segmenty
-- generowanie statystyk segmentowych
-
-### Rozwijane funkcje
-- eksport wyników do CSV
-- zapis wykresów do PNG
-- generowanie raportów PDF
-- porównanie dwóch sekwencji
-- rozszerzona wizualizacja rozmieszczenia motywów
+- obsługa plików TXT,
+- obsługa plików FASTA,
+- pobieranie sekwencji z NCBI GenBank,
+- wyszukiwanie jednego lub wielu motywów,
+- określanie pozycji wystąpień,
+- zliczanie liczby wystąpień,
+- podział sekwencji na segmenty,
+- generowanie statystyk segmentowych,
+- eksport wyników do CSV,
+- zapis wykresów do PNG,
+- generowanie raportów PDF,
+- porównanie dwóch sekwencji,
+- wizualizacja pozycji motywów na osi sekwencji.
 
 ---
 
@@ -45,6 +43,7 @@ Projekt łączy elementy programowania w Pythonie z podstawami bioinformatyki.
 - NumPy
 - Matplotlib
 - Biopython
+- Pytest
 
 ---
 
@@ -53,14 +52,3 @@ Projekt łączy elementy programowania w Pythonie z podstawami bioinformatyki.
 ```bash
 pip install -r requirements.txt
 python main.py
-```
-
----
-
-## Testy
-
-Aby uruchomić testy:
-
-```bash
-pytest
-```
