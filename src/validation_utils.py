@@ -16,6 +16,14 @@ def validate_dna_sequence(sequence: str) -> None:
         raise ValueError("DNA sequence contains invalid characters. Allowed: A, T, C, G, N.")
 
 
+def validate_motif(motif: str) -> None:
+    if not motif:
+        raise ValueError("Motif cannot be empty.")
+
+    if not DNA_PATTERN.fullmatch(motif):
+        raise ValueError("Motif contains invalid characters. Allowed: A, T, C, G, N.")
+
+
 def normalize_motifs(motifs: list[str]) -> list[str]:
     normalized = []
     seen = set()
@@ -28,11 +36,3 @@ def normalize_motifs(motifs: list[str]) -> list[str]:
             seen.add(clean)
 
     return normalized
-
-
-def validate_motif(motif: str) -> None:
-    if not motif:
-        raise ValueError("Motif cannot be empty.")
-
-    if not DNA_PATTERN.fullmatch(motif):
-        raise ValueError("Motif contains invalid characters. Allowed: A, T, C, G, N.")

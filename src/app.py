@@ -1,21 +1,27 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-from src.io_utils import load_sequence_from_txt, load_sequence_from_fasta
+from src.export_utils import (
+    export_report_to_pdf,
+    export_results_to_csv,
+    plot_motif_distribution,
+    plot_motif_positions,
+)
+from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
 from src.motif_analysis import (
     analyze_multiple_motifs,
     build_statistics_dataframe,
-    compare_sequences
+    compare_sequences,
 )
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import normalize_motifs
-from src.export_utils import export_results_to_csv, plot_motif_distribution, export_report_to_pdf, plot_motif_positions
+
 
 class App:
     def __init__(self, root):
         self.root = root
         self.root.title("DNA Motif Analyzer")
-        self.root.geometry("900x700")
+        self.root.geometry("900x760")
 
         self.file_path = None
         self.file_path_2 = None
@@ -30,7 +36,7 @@ class App:
         self.title_label = tk.Label(root, text="DNA Motif Analyzer", font=("Arial", 16))
         self.title_label.pack(pady=10)
 
-        self.file_button = tk.Button(root, text="Choose sequence file", command=self.choose_file)
+        self.file_button = tk.Button(root, text="Choose first sequence file", command=self.choose_file)
         self.file_button.pack(pady=5)
 
         self.file_label = tk.Label(root, text="No first file selected")
@@ -42,7 +48,7 @@ class App:
         self.file_label_2 = tk.Label(root, text="No second file selected")
         self.file_label_2.pack(pady=5)
 
-        self.ncbi_label = tk.Label(root, text="NCBI accession ID:")
+        self.ncbi_label = tk.Label(root, text="First NCBI accession ID:")
         self.ncbi_label.pack(pady=5)
 
         self.ncbi_entry = tk.Entry(root, width=30)
@@ -88,7 +94,7 @@ class App:
         self.export_csv_button = tk.Button(root, text="Export CSV", command=self.export_csv)
         self.export_csv_button.pack(pady=5)
 
-        self.show_plot_button = tk.Button(root, text="Show Plot", command=self.show_plot)
+        self.show_plot_button = tk.Button(root, text="Show Distribution Plot", command=self.show_plot)
         self.show_plot_button.pack(pady=5)
 
         self.show_positions_button = tk.Button(root, text="Show Motif Positions", command=self.show_positions_plot)
@@ -100,7 +106,7 @@ class App:
         self.export_pdf_button = tk.Button(root, text="Export PDF", command=self.export_pdf)
         self.export_pdf_button.pack(pady=5)
 
-        self.result_text = tk.Text(root, height=22, width=105)
+        self.result_text = tk.Text(root, height=22, width=110)
         self.result_text.pack(pady=10)
 
     def _load_sequence_from_path(self, path):
