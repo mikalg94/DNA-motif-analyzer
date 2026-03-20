@@ -1,8 +1,12 @@
+import matplotlib
+matplotlib.use("TkAgg")
+
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
 import plotly.express as px
 import os
 import pandas as pd
-from matplotlib.backends.backend_pdf import PdfPages
 
 
 def plot_motif_distribution(df, motif, output_path=None, show_plot=True):
