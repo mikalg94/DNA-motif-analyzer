@@ -13,8 +13,6 @@ from src.export_utils import (
     export_results_to_csv,
     interactive_motif_positions,
     plot_motif_distribution,
-    plot_motif_positions,
-    plot_multiple_motifs_summary,
     save_analysis_history,
 )
 
