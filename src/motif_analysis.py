@@ -58,3 +58,21 @@ def build_statistics_dataframe(sequence, motif, segment_length=10):
 
     df = pd.DataFrame(data)
     return df
+
+
+def analyze_multiple_motifs(sequence, motifs):
+    results = []
+
+    for motif in motifs:
+        motif = motif.strip().upper()
+        if motif:
+            count = count_motif_occurrences(sequence, motif)
+            positions = find_motif_positions(sequence, motif)
+
+            results.append({
+                "motif": motif,
+                "count": count,
+                "positions": positions
+            })
+
+    return results
