@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-def plot_motif_distribution(df, motif, output_path=None):
+def plot_motif_distribution(df, motif, output_path=None, show_plot=True):
     plt.figure(figsize=(8, 5))
     plt.bar(df["segment_id"], df["motif_count"])
     plt.xlabel("Segment")
@@ -13,7 +13,10 @@ def plot_motif_distribution(df, motif, output_path=None):
     if output_path:
         plt.savefig(output_path)
 
-    plt.show()
+    if show_plot:
+        plt.show()
+    else:
+        plt.close()
 
 
 def export_results_to_csv(df, output_path):

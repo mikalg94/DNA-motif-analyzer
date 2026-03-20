@@ -5,6 +5,7 @@ from src.io_utils import load_sequence_from_txt, load_sequence_from_fasta
 from src.motif_analysis import analyze_multiple_motifs, build_statistics_dataframe
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import normalize_motifs
+from src.export_utils import export_results_to_csv
 
 
 class App:
@@ -59,8 +60,12 @@ class App:
         self.analyze_button = tk.Button(root, text="Analyze", command=self.run_analysis)
         self.analyze_button.pack(pady=10)
 
+        self.export_csv_button = tk.Button(root, text="Export CSV", command=self.export_csv)
+        self.export_csv_button.pack(pady=5)
+
         self.result_text = tk.Text(root, height=20, width=95)
         self.result_text.pack(pady=10)
+
 
     def choose_file(self):
         self.file_path = filedialog.askopenfilename(
@@ -138,3 +143,22 @@ class App:
         self.result_text.insert(tk.END, "\nSegment statistics for first motif:\n")
         self.result_text.insert(tk.END, self.last_statistics_df.to_string(index=False))
         self.result_text.insert(tk.END, "\n")
+
+    def export_csv(self):
+        if self.last_statistics_df is None:
+            messagebox.showerror("Error", "No analysis results available for export.")
+            return
+
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")]
+        )
+
+        if not output_path:
+            return
+
+        try:
+            export_results_to_csv(self.last_statistics_df, output_path)
+            messagebox.showinfo("Success", f"CSV exported to:\n{output_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export CSV: {e}")
