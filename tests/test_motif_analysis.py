@@ -85,13 +85,13 @@ def test_compare_sequences():
 def test_find_motif_positions_with_iupac_n():
     sequence = "ATGATCATAATT"
     motif = "ATN"
-    assert find_motif_positions(sequence, motif) == [0, 3, 6]
+    assert find_motif_positions(sequence, motif) == [0, 3, 6, 9]
 
 
 def test_find_motif_positions_with_iupac_r():
     sequence = "AAAGACAT"
     motif = "AR"
-    assert find_motif_positions(sequence, motif) == [0, 1, 3, 5]
+    assert find_motif_positions(sequence, motif) == [0, 1, 2]
 
 
 def test_count_motif_occurrences_with_iupac():
