@@ -596,9 +596,32 @@ class App:
         }
         save_analysis_history(history_entry)
 
-    def _display_results(self, window_title, content):
+    def _clear_result_table(self):
+        self.result_tree.delete(*self.result_tree.get_children())
+        self.result_tree["columns"] = ()
+
+    def _display_dataframe_in_table(self, df):
+        self._clear_result_table()
+
+        if df is None or df.empty:
+            return
+
+        columns = list(df.columns)
+        self.result_tree["columns"] = columns
+
+        for column in columns:
+            self.result_tree.heading(column, text=column)
+            self.result_tree.column(column, width=130, anchor="center")
+
+        for _, row in df.iterrows():
+            values = [str(value) for value in row.tolist()]
+            self.result_tree.insert("", tk.END, values=values)
+
+    def _display_results(self, window_title, content, dataframe=None):
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, content)
+
+        self._display_dataframe_in_table(dataframe)
         self._show_results_window(window_title, content)
 
     def _prepare_analysis_results(self, motifs, segment_length):
@@ -641,7 +664,11 @@ class App:
             display_results = self._filter_and_sort_results(results)
             final_text = self._format_analysis_results(motifs, segment_length, display_results)
             self._save_analysis_history(motifs, segment_length, results)
-            self._display_results("Analysis Results", final_text)
+            self._display_results(
+                "Analysis Results",
+                final_text,
+                dataframe=self.last_statistics_df
+            )
             self._update_action_buttons_state()
             self._set_status("Analysis complete")
         except Exception as e:
@@ -693,7 +720,11 @@ class App:
                     raise ValueError("Top N must be a positive integer.")
             final_text = self._format_comparison_results(motifs)
             self._save_comparison_history(motifs)
-            self._display_results("Comparison Results", final_text)
+            self._display_results(
+                "Comparison Results",
+                final_text,
+                dataframe=self.last_comparison_df
+            )
             self._update_action_buttons_state()
             self._set_status("Comparison complete")
         except Exception as e:
@@ -1064,7 +1095,11 @@ class App:
             self._set_status("Opening analysis history...")
             history_df = pd.read_csv(history_path)
             history_text = history_df.to_string(index=False)
-            self._show_results_window("Analysis History", history_text)
+            self._display_results(
+                "Analysis History",
+                history_text,
+                dataframe=history_df
+            )
             self._set_status("Analysis history opened")
         except Exception as e:
             self._set_status("Failed to open analysis history")

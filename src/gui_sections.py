@@ -385,14 +385,24 @@ def build_results_frame(app):
     )
     app.result_container.pack(fill="both", expand=True, padx=15, pady=10)
 
-    app.result_frame = ttk.Frame(app.result_container)
-    app.result_frame.pack(fill="both", expand=True)
+    app.result_notebook = ttk.Notebook(app.result_container)
+    app.result_notebook.pack(fill="both", expand=True)
 
-    app.result_scrollbar = ttk.Scrollbar(app.result_frame)
+    app.result_text_tab = ttk.Frame(app.result_notebook)
+    app.result_table_tab = ttk.Frame(app.result_notebook)
+
+    app.result_notebook.add(app.result_text_tab, text="Text Summary")
+    app.result_notebook.add(app.result_table_tab, text="Table")
+
+    # zakładka tekstowa
+    app.result_text_frame = ttk.Frame(app.result_text_tab)
+    app.result_text_frame.pack(fill="both", expand=True)
+
+    app.result_scrollbar = ttk.Scrollbar(app.result_text_frame)
     app.result_scrollbar.pack(side="right", fill="y")
 
     app.result_text = tk.Text(
-        app.result_frame,
+        app.result_text_frame,
         height=12,
         width=110,
         yscrollcommand=app.result_scrollbar.set
@@ -401,6 +411,26 @@ def build_results_frame(app):
 
     app.result_scrollbar.config(command=app.result_text.yview)
 
+    # zakładka tabeli
+    app.result_table_frame = ttk.Frame(app.result_table_tab)
+    app.result_table_frame.pack(fill="both", expand=True)
+
+    app.result_table_scrollbar_y = ttk.Scrollbar(app.result_table_frame, orient="vertical")
+    app.result_table_scrollbar_y.pack(side="right", fill="y")
+
+    app.result_table_scrollbar_x = ttk.Scrollbar(app.result_table_frame, orient="horizontal")
+    app.result_table_scrollbar_x.pack(side="bottom", fill="x")
+
+    app.result_tree = ttk.Treeview(
+        app.result_table_frame,
+        show="headings",
+        yscrollcommand=app.result_table_scrollbar_y.set,
+        xscrollcommand=app.result_table_scrollbar_x.set
+    )
+    app.result_tree.pack(side="left", fill="both", expand=True)
+
+    app.result_table_scrollbar_y.config(command=app.result_tree.yview)
+    app.result_table_scrollbar_x.config(command=app.result_tree.xview)
 
 def build_status_bar(app):
     app.status_var = tk.StringVar()
