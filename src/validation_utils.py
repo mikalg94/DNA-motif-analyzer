@@ -1,7 +1,7 @@
 import re
 
 
-DNA_PATTERN = re.compile(r"^[ATCGN]+$", re.IGNORECASE)
+DNA_PATTERN = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
 MOTIF_PATTERN = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
 
 
@@ -14,7 +14,10 @@ def validate_dna_sequence(sequence: str) -> None:
         raise ValueError("DNA sequence is empty.")
 
     if not DNA_PATTERN.fullmatch(sequence):
-        raise ValueError("DNA sequence contains invalid characters. Allowed: A, T, C, G, N.")
+        raise ValueError(
+            "DNA sequence contains invalid characters. Allowed: A, C, G, T, "
+            "R, Y, S, W, K, M, B, D, H, V, N."
+        )
 
 
 def validate_motif(motif: str) -> None:
