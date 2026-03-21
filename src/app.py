@@ -295,6 +295,39 @@ class App:
         text_widget.insert("1.0", content)
         text_widget.config(state="disabled")
 
+    def _format_analysis_results(self, motifs, segment_length, results):
+        output = []
+        output.append("ANALYSIS RESULTS\n")
+        output.append(f"Sequence length: {len(self.sequence)}")
+        output.append(f"Recognized motifs: {', '.join(motifs)}")
+        output.append(f"Segment length: {segment_length}\n")
+
+        for result in results:
+            output.append(
+                f"Motif: {result['motif']} | "
+                f"Count: {result['count']} | "
+                f"Positions: {result['positions']}"
+            )
+
+        output.append("\nSegment statistics for selected motif:\n")
+        output.append(self.last_statistics_df.to_string(index=False))
+
+        return "\n".join(output)
+
+    def _format_comparison_results(self, motifs):
+        output = []
+        output.append("COMPARISON RESULTS\n")
+        output.append(f"Sequence 1 length: {len(self.sequence)}")
+        output.append(f"Sequence 2 length: {len(self.sequence_2)}")
+        output.append(f"Recognized motifs: {', '.join(motifs)}\n")
+
+        if self.last_comparison_df.empty:
+            output.append("No comparison data to display.")
+        else:
+            output.append(self.last_comparison_df.to_string(index=False))
+
+        return "\n".join(output)
+
     def run_analysis(self):
         if not self.sequence:
             messagebox.showerror("Error", "Please load a sequence from file or NCBI.")
@@ -321,23 +354,7 @@ class App:
             segment_length
         )
 
-        output = []
-        output.append("ANALYSIS RESULTS\n")
-        output.append(f"Sequence length: {len(self.sequence)}")
-        output.append(f"Recognized motifs: {', '.join(motifs)}")
-        output.append(f"Segment length: {segment_length}\n")
-
-        for result in results:
-            output.append(
-                f"Motif: {result['motif']} | "
-                f"Count: {result['count']} | "
-                f"Positions: {result['positions']}"
-            )
-
-        output.append("\nSegment statistics for selected motif:\n")
-        output.append(self.last_statistics_df.to_string(index=False))
-
-        final_text = "\n".join(output)
+        final_text = self._format_analysis_results(motifs, segment_length, results)
 
         history_entry = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -379,18 +396,7 @@ class App:
                 motifs
             )
 
-            output = []
-            output.append("COMPARISON RESULTS\n")
-            output.append(f"Sequence 1 length: {len(self.sequence)}")
-            output.append(f"Sequence 2 length: {len(self.sequence_2)}")
-            output.append(f"Recognized motifs: {', '.join(motifs)}\n")
-
-            if self.last_comparison_df.empty:
-                output.append("No comparison data to display.")
-            else:
-                output.append(self.last_comparison_df.to_string(index=False))
-
-            final_text = "\n".join(output)
+            final_text = self._format_comparison_results(motifs)
 
             comparison_details = []
             for _, row in self.last_comparison_df.iterrows():
