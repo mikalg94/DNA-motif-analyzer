@@ -108,6 +108,12 @@ class App:
         self.fetch_button_2 = tk.Button(self.ncbi_frame, text="Fetch second from NCBI", command=self.fetch_from_ncbi_2, width=25)
         self.fetch_button_2.pack(pady=3)
 
+        self.example_button = tk.Button(self.ncbi_frame, text="Load Example (Human Hemoglobin)", command=self.load_example_ncbi, width=30)
+        self.example_button.pack(pady=3)
+
+        self.example_button_2 = tk.Button(self.ncbi_frame, text="Load Example (Mitochondrial DNA)", command=self.load_example_ncbi_2, width=30)
+        self.example_button_2.pack(pady=3)
+
         self.analysis_frame = tk.LabelFrame(self.scrollable_frame, text="Analysis settings", padx=10, pady=10)
         self.analysis_frame.pack(fill="x", padx=15, pady=5)
 
@@ -121,12 +127,7 @@ class App:
         self.selected_motif_label.pack(pady=3)
 
         self.selected_motif_var = tk.StringVar()
-        self.selected_motif_combobox = ttk.Combobox(
-            self.analysis_frame,
-            textvariable=self.selected_motif_var,
-            state="readonly",
-            width=25
-        )
+        self.selected_motif_combobox = ttk.Combobox(self.analysis_frame, textvariable=self.selected_motif_var, state="readonly", width=25)
         self.selected_motif_combobox.pack(pady=3)
 
         self.segment_label = tk.Label(self.analysis_frame, text="Segment length:")
@@ -269,6 +270,40 @@ class App:
             messagebox.showinfo("Success", f"Second sequence downloaded from NCBI.\nLength: {len(self.sequence_2)}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download second sequence: {e}")
+
+    def load_example_ncbi(self):
+        try:
+            accession_id = "NM_000518"
+            email = "test@test.com"
+
+            self.sequence = fetch_sequence_from_ncbi(accession_id, email)
+            self.file_label.config(text=f"Loaded example from NCBI: {accession_id}")
+
+            messagebox.showinfo(
+                "Success",
+                f"Example sequence loaded successfully.\n"
+                f"Accession: {accession_id}\n"
+                f"Length: {len(self.sequence)}"
+            )
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load example: {e}")
+
+    def load_example_ncbi_2(self):
+        try:
+            accession_id = "NC_012920"
+            email = "test@test.com"
+
+            self.sequence = fetch_sequence_from_ncbi(accession_id, email)
+            self.file_label.config(text=f"Loaded example from NCBI: {accession_id}")
+
+            messagebox.showinfo(
+                "Success",
+                f"Example sequence loaded successfully.\n"
+                f"Accession: {accession_id}\n"
+                f"Length: {len(self.sequence)}"
+            )
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load example: {e}")
 
     def _get_motifs_and_segment_length(self):
         motifs_text = self.motif_entry.get().strip()
