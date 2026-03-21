@@ -71,6 +71,55 @@ class App:
         build_actions_frame(self)
         build_results_frame(self)
         build_status_bar(self)
+        self._update_action_buttons_state()
+
+    def _update_action_buttons_state(self):
+        has_sequence_1 = bool(self.sequence)
+        has_sequence_2 = bool(self.sequence_2)
+        has_analysis_results = bool(self.last_results)
+        has_statistics = self.last_statistics_df is not None
+        has_comparison = self.last_comparison_df is not None
+        has_any_export_data = has_statistics or has_comparison
+
+        self.analyze_button.config(state="normal" if has_sequence_1 else "disabled")
+        self.compare_button.config(
+            state="normal" if has_sequence_1 and has_sequence_2 else "disabled"
+        )
+
+        self.export_csv_button.config(
+            state="normal" if has_any_export_data else "disabled"
+        )
+        self.show_plot_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
+        self.show_multi_plot_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
+        self.show_positions_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
+        self.show_interactive_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
+        self.save_plot_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
+        self.export_pdf_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
+        self.show_history_button.config(
+            state="normal" if os.path.exists("results/analysis_history.csv") else "disabled"
+        )
+
+        self.show_gc_button.config(
+            state="normal" if has_statistics else "disabled"
+        )
+        self.show_gc_comparison_button.config(
+            state="normal" if has_sequence_1 and has_sequence_2 else "disabled"
+        )
+        self.show_gc_motif_overlay_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
 
     @staticmethod
     def _load_sequence_from_path(path):
@@ -127,11 +176,13 @@ class App:
 
             messagebox.showinfo("Success", success_message)
 
+        self._update_action_buttons_state()
         self._set_ncbi_buttons_state("normal")
         self._set_status("Sequence downloaded successfully")
 
     def _handle_ncbi_error(self, error_message):
         self._set_ncbi_buttons_state("normal")
+        self._update_action_buttons_state()
         self._set_status("NCBI download failed")
         messagebox.showerror("Error", error_message)
 
@@ -189,6 +240,7 @@ class App:
                 success_message = f"Second sequence loaded successfully.\nLength: {len(sequence)}"
 
             self._set_sequence_data(target, sequence, selected_path)
+            self._update_action_buttons_state()
             self._show_sequence_warning_if_needed(sequence)
             self._set_status("Sequence loaded successfully")
             messagebox.showinfo("Success", success_message)
@@ -200,6 +252,7 @@ class App:
                 self.sequence_2 = ""
 
             self._set_status("Failed to load sequence")
+            self._update_action_buttons_state()
             messagebox.showerror("Error", f"Failed to load sequence: {e}")
 
     def fetch_from_ncbi(self, target):
@@ -506,6 +559,7 @@ class App:
             final_text = self._format_analysis_results(motifs, segment_length, results)
             self._save_analysis_history(motifs, segment_length, results)
             self._display_results("Analysis Results", final_text)
+            self._update_action_buttons_state()
             self._set_status("Analysis complete")
         except Exception as e:
             self._set_status("Analysis failed")
@@ -531,6 +585,7 @@ class App:
             final_text = self._format_comparison_results(motifs)
             self._save_comparison_history(motifs)
             self._display_results("Comparison Results", final_text)
+            self._update_action_buttons_state()
             self._set_status("Comparison complete")
         except Exception as e:
             self._set_status("Comparison failed")
@@ -707,6 +762,7 @@ class App:
 
     def show_analysis_history(self):
         history_path = "results/analysis_history.csv"
+        self._update_action_buttons_state()
 
         if not os.path.exists(history_path):
             self._set_status("No analysis history available")
