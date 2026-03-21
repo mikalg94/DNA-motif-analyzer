@@ -96,7 +96,7 @@ class App:
         self.file_button = tk.Button(
             self.files_frame,
             text="Choose first sequence file",
-            command=self.choose_file,
+            command=lambda: self.choose_file(1),
             width=25
         )
         self.file_button.pack(pady=3)
@@ -107,7 +107,7 @@ class App:
         self.file_button_2 = tk.Button(
             self.files_frame,
             text="Choose second sequence file",
-            command=self.choose_file_2,
+            command=lambda: self.choose_file(2),
             width=25
         )
         self.file_button_2.pack(pady=3)
@@ -145,7 +145,7 @@ class App:
         self.fetch_button = tk.Button(
             self.ncbi_frame,
             text="Fetch first from NCBI",
-            command=self.fetch_from_ncbi,
+            command=lambda: self.fetch_from_ncbi(1),
             width=25
         )
         self.fetch_button.pack(pady=3)
@@ -153,7 +153,7 @@ class App:
         self.fetch_button_2 = tk.Button(
             self.ncbi_frame,
             text="Fetch second from NCBI",
-            command=self.fetch_from_ncbi_2,
+            command=lambda: self.fetch_from_ncbi(2),
             width=25
         )
         self.fetch_button_2.pack(pady=3)
@@ -161,7 +161,11 @@ class App:
         self.example_button = tk.Button(
             self.ncbi_frame,
             text="Load Example (Human Hemoglobin)",
-            command=self.load_example_ncbi,
+            command=lambda: self.load_example_ncbi(
+                target=1,
+                accession_id="NM_000518",
+                description="Human Hemoglobin"
+            ),
             width=30
         )
         self.example_button.pack(pady=3)
@@ -169,7 +173,11 @@ class App:
         self.example_button_2 = tk.Button(
             self.ncbi_frame,
             text="Load Example (Mitochondrial DNA)",
-            command=self.load_example_ncbi_2,
+            command=lambda: self.load_example_ncbi(
+                target=2,
+                accession_id="NC_012920",
+                description="Mitochondrial DNA"
+            ),
             width=30
         )
         self.example_button_2.pack(pady=3)
@@ -330,108 +338,78 @@ class App:
 
         raise ValueError("Unsupported file format. Please choose TXT, FASTA, or FA.")
 
-    def choose_file(self):
-        self.file_path = filedialog.askopenfilename(
+    def _set_sequence_data(self, target, sequence, source_label):
+        if target == 1:
+            self.sequence = sequence
+            self.file_label.config(text=source_label)
+        else:
+            self.sequence_2 = sequence
+            self.file_label_2.config(text=source_label)
+
+    def choose_file(self, target):
+        selected_path = filedialog.askopenfilename(
             filetypes=[("Sequence files", "*.txt *.fasta *.fa"), ("All files", "*.*")]
         )
 
-        if self.file_path:
-            self.file_label.config(text=self.file_path)
+        if not selected_path:
+            return
 
-            try:
-                self.sequence = self._load_sequence_from_path(self.file_path)
-                messagebox.showinfo(
-                    "Success",
-                    f"First sequence loaded successfully.\nLength: {len(self.sequence)}"
-                )
-            except Exception as e:
+        try:
+            sequence = self._load_sequence_from_path(selected_path)
+
+            if target == 1:
+                self.file_path = selected_path
+                success_message = f"First sequence loaded successfully.\nLength: {len(sequence)}"
+            else:
+                self.file_path_2 = selected_path
+                success_message = f"Second sequence loaded successfully.\nLength: {len(sequence)}"
+
+            self._set_sequence_data(target, sequence, selected_path)
+            messagebox.showinfo("Success", success_message)
+
+        except Exception as e:
+            if target == 1:
                 self.sequence = ""
-                messagebox.showerror("Error", f"Failed to load first sequence: {e}")
-
-    def choose_file_2(self):
-        self.file_path_2 = filedialog.askopenfilename(
-            filetypes=[("Sequence files", "*.txt *.fasta *.fa"), ("All files", "*.*")]
-        )
-
-        if self.file_path_2:
-            self.file_label_2.config(text=self.file_path_2)
-
-            try:
-                self.sequence_2 = self._load_sequence_from_path(self.file_path_2)
-                messagebox.showinfo(
-                    "Success",
-                    f"Second sequence loaded successfully.\nLength: {len(self.sequence_2)}"
-                )
-            except Exception as e:
+            else:
                 self.sequence_2 = ""
-                messagebox.showerror("Error", f"Failed to load second sequence: {e}")
 
-    def fetch_from_ncbi(self):
-        accession_id = self.ncbi_entry.get().strip()
+            messagebox.showerror("Error", f"Failed to load sequence: {e}")
+
+    def fetch_from_ncbi(self, target):
+        accession_entry = self.ncbi_entry if target == 1 else self.ncbi_entry_2
+        accession_id = accession_entry.get().strip()
         email = self.email_entry.get().strip()
 
         if not accession_id or not email:
-            messagebox.showerror("Error", "Please enter first accession ID and email.")
+            messagebox.showerror("Error", "Please enter accession ID and email.")
             return
 
         try:
-            self.sequence = fetch_sequence_from_ncbi(accession_id, email)
-            self.file_label.config(text=f"Loaded first from NCBI: {accession_id}")
-            messagebox.showinfo(
-                "Success",
-                f"First sequence downloaded from NCBI.\nLength: {len(self.sequence)}"
-            )
+            sequence = fetch_sequence_from_ncbi(accession_id, email)
+            self._set_sequence_data(target, sequence, f"Loaded from NCBI: {accession_id}")
+
+            if target == 1:
+                success_message = f"First sequence downloaded from NCBI.\nLength: {len(sequence)}"
+            else:
+                success_message = f"Second sequence downloaded from NCBI.\nLength: {len(sequence)}"
+
+            messagebox.showinfo("Success", success_message)
+
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download first sequence: {e}")
+            messagebox.showerror("Error", f"Failed to download sequence: {e}")
 
-    def fetch_from_ncbi_2(self):
-        accession_id = self.ncbi_entry_2.get().strip()
-        email = self.email_entry.get().strip()
-
-        if not accession_id or not email:
-            messagebox.showerror("Error", "Please enter second accession ID and email.")
-            return
-
+    def load_example_ncbi(self, target, accession_id, description):
         try:
-            self.sequence_2 = fetch_sequence_from_ncbi(accession_id, email)
-            self.file_label_2.config(text=f"Loaded second from NCBI: {accession_id}")
-            messagebox.showinfo(
-                "Success",
-                f"Second sequence downloaded from NCBI.\nLength: {len(self.sequence_2)}"
-            )
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to download second sequence: {e}")
-
-    def load_example_ncbi(self):
-        try:
-            accession_id = "NM_000518"
             email = "test@test.com"
-
-            self.sequence = fetch_sequence_from_ncbi(accession_id, email)
-            self.file_label.config(text=f"Loaded example from NCBI: {accession_id}")
+            sequence = fetch_sequence_from_ncbi(accession_id, email)
+            self._set_sequence_data(target, sequence, f"Loaded example from NCBI: {accession_id}")
 
             messagebox.showinfo(
                 "Success",
                 f"Example sequence loaded successfully.\n"
+                f"Description: {description}\n"
                 f"Accession: {accession_id}\n"
-                f"Length: {len(self.sequence)}"
-            )
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load example: {e}")
-
-    def load_example_ncbi_2(self):
-        try:
-            accession_id = "NC_012920"
-            email = "test@test.com"
-
-            self.sequence_2 = fetch_sequence_from_ncbi(accession_id, email)
-            self.file_label_2.config(text=f"Loaded example from NCBI: {accession_id}")
-
-            messagebox.showinfo(
-                "Success",
-                f"Second example sequence loaded successfully.\n"
-                f"Accession: {accession_id}\n"
-                f"Length: {len(self.sequence_2)}"
+                f"Length: {len(sequence)}"
             )
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load example: {e}")
