@@ -498,11 +498,12 @@ class App:
             self._set_status("Failed to generate overlay plot")
             messagebox.showerror("Error", f"Failed to generate overlay plot: {e}")
 
-    def _build_extended_sequence_statistics_for_sequence(self, sequence, motif, segment_length):
+    def _build_extended_sequence_statistics_for_sequence(self, sequence, motif, segment_length, mode):
         max_segment = get_segment_with_max_motifs(
             sequence,
             motif,
-            segment_length
+            segment_length,
+            mode=mode
         )
 
         if max_segment is None:
@@ -525,7 +526,8 @@ class App:
             "average_motifs_per_segment": calculate_average_motifs_per_segment(
                 sequence,
                 motif,
-                segment_length
+                segment_length,
+                mode=mode
             ),
             "max_segment_text": max_segment_text,
         }
@@ -534,7 +536,8 @@ class App:
         return self._build_extended_sequence_statistics_for_sequence(
             self.last_analyzed_sequence,
             motif,
-            segment_length
+            segment_length,
+            mode=self.segment_mode_var.get()
         )
 
     def _filter_and_sort_results(self, results):
@@ -576,7 +579,8 @@ class App:
         extended_stats = self._build_extended_sequence_statistics_for_sequence(
             sequence,
             selected_motif,
-            segment_length
+            segment_length,
+            mode=self.segment_mode_var.get()
         )
 
         output = [
@@ -587,6 +591,7 @@ class App:
             f"Unknown bases (N): {extended_stats['unknown_bases']}",
             f"Recognized motifs: {', '.join(motifs)}",
             f"Segment length: {segment_length}",
+            f"Segment assignment mode: {self.segment_mode_var.get()}",
             f"Selected motif for detailed statistics: {selected_motif}",
             f"Motif density per 1000 nt: {extended_stats['motif_density_per_1000_nt']}",
             f"Average motifs per segment: {extended_stats['average_motifs_per_segment']}",
@@ -695,7 +700,7 @@ class App:
             values = [str(value) for value in row.tolist()]
             self.result_tree.insert("", tk.END, values=values)
 
-    def _display_results(self, window_title, content, dataframe=None):
+    def _display_results(self, content, dataframe=None):
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, content)
         self._display_dataframe_in_table(dataframe)
@@ -755,7 +760,6 @@ class App:
             )
 
             self._display_results(
-                f"{sequence_label} Analysis Results",
                 final_text,
                 dataframe=self.last_statistics_df
             )
@@ -825,7 +829,6 @@ class App:
             final_text = self._format_comparison_results(motifs)
             self._save_comparison_history(motifs)
             self._display_results(
-                "Comparison Results",
                 final_text,
                 dataframe=self.last_comparison_df
             )
@@ -1204,7 +1207,6 @@ class App:
             history_df = pd.read_csv(history_path)
             history_text = history_df.to_string(index=False)
             self._display_results(
-                "Analysis History",
                 history_text,
                 dataframe=history_df
             )

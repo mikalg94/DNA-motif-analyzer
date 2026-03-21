@@ -1,15 +1,18 @@
+import json
 import os
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
-import json
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
-from datetime import datetime
+
 
 def export_session_to_json(session_data, output_path):
     with open(output_path, "w", encoding="utf-8") as json_file:
         json.dump(session_data, json_file, indent=4, ensure_ascii=False)
+
 
 def create_motif_distribution_figure(df, motif):
     fig = Figure(figsize=(8, 5))
@@ -65,6 +68,7 @@ def create_multiple_motifs_summary_figure(results):
     fig.tight_layout()
     return fig
 
+
 def create_gc_content_figure(df):
     fig = Figure(figsize=(8, 5))
     ax = fig.add_subplot(111)
@@ -77,6 +81,7 @@ def create_gc_content_figure(df):
 
     fig.tight_layout()
     return fig
+
 
 def create_gc_comparison_figure(df1, df2):
     fig = Figure(figsize=(9, 5))
@@ -94,15 +99,17 @@ def create_gc_comparison_figure(df1, df2):
 
     return fig
 
+
 def create_gc_motif_overlay_figure(df, results, sequence_length):
     fig = Figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
 
-    # GC content jako linia
-    ax.plot(df["segment_id"], df["gc_content"], color="blue", marker="o", label="GC content (%)")
-
-    # Motywy jako punkty
-    y_offset = max(df["gc_content"]) + 5 if not df.empty else 5
+    if not df.empty:
+        segment_centers = (df["start"] + df["end"]) / 2
+        ax.plot(segment_centers, df["gc_content"], marker="o", label="GC content (%)")
+        y_offset = max(df["gc_content"]) + 5
+    else:
+        y_offset = 5
 
     for result in results:
         motif = result["motif"]
@@ -116,17 +123,17 @@ def create_gc_motif_overlay_figure(df, results, sequence_length):
                 marker="x"
             )
 
-    ax.set_xlabel("Position / Segment")
+    ax.set_xlim(0, sequence_length)
+    ax.set_xlabel("Position in sequence")
     ax.set_ylabel("GC content (%)")
     ax.set_title("GC-content with motif positions overlay")
 
-    ax.legend()
-    fig.tight_layout()
+    if results:
+        ax.legend()
 
+    fig.tight_layout()
     return fig
 
-# Functions below are used for saving plots to files
-# and for optional direct display outside the Tkinter windows.
 
 def plot_motif_distribution(df, motif, output_path=None, show_plot=True):
     plt.figure(figsize=(8, 5))
@@ -235,7 +242,10 @@ def interactive_motif_positions(results, sequence_length, output_html="results/i
         yaxis_title="Motif"
     )
 
-    os.makedirs(os.path.dirname(output_html), exist_ok=True)
+    directory = os.path.dirname(output_html)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
     fig.write_html(output_html)
 
     return output_html
@@ -261,7 +271,6 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
         max_segment_text = "No segment data available."
 
     with PdfPages(output_path) as pdf:
-        # Strona 1 - podsumowanie raportu
         fig, ax = plt.subplots(figsize=(8.27, 11.69))
         ax.axis("off")
 
@@ -292,7 +301,6 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
         pdf.savefig(fig)
         plt.close(fig)
 
-        # Strona 2 - wykres rozmieszczenia motywu
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(df["segment_id"], df["motif_count"])
         ax.set_xlabel("Segment")
@@ -302,14 +310,12 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
         pdf.savefig(fig)
         plt.close(fig)
 
-        # Strona 3 - tabela segmentów
         fig, ax = plt.subplots(figsize=(11.69, 8.27))
         ax.axis("off")
 
         table_df = df.copy()
         table_df["motif_positions"] = table_df["motif_positions"].astype(str)
 
-        # ograniczenie długości tekstu w komórkach, żeby tabela była czytelniejsza
         table_df["motif_positions"] = table_df["motif_positions"].apply(
             lambda x: x if len(x) <= 25 else x[:22] + "..."
         )
@@ -331,7 +337,9 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
 
 
 def save_analysis_history(entry, output_path="results/analysis_history.csv"):
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    directory = os.path.dirname(output_path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
 
     new_row = pd.DataFrame([entry])
 
