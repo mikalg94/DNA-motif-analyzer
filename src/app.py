@@ -5,7 +5,7 @@ from datetime import datetime
 
 import pandas as pd
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 from src.export_utils import (
@@ -18,6 +18,15 @@ from src.export_utils import (
     plot_motif_distribution,
     save_analysis_history,
 )
+from src.gui_sections import (
+    build_actions_frame,
+    build_analysis_frame,
+    build_files_frame,
+    build_main_layout,
+    build_ncbi_frame,
+    build_results_frame,
+    build_title,
+)
 from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
 from src.motif_analysis import (
     analyze_multiple_motifs,
@@ -29,16 +38,6 @@ from src.validation_utils import (
     get_sequence_warning,
     normalize_motifs,
     validate_motifs_against_sequence,
-)
-
-from src.gui_sections import (
-    build_main_layout,
-    build_title,
-    build_files_frame,
-    build_ncbi_frame,
-    build_analysis_frame,
-    build_actions_frame,
-    build_results_frame,
 )
 
 
@@ -59,7 +58,6 @@ class App:
         self.last_selected_motif = None
         self.last_comparison_df = None
 
-        # Budowa GUI (teraz w osobnym module)
         build_main_layout(self)
         build_title(self)
         build_files_frame(self)
@@ -68,7 +66,8 @@ class App:
         build_actions_frame(self)
         build_results_frame(self)
 
-    def _load_sequence_from_path(self, path):
+    @staticmethod
+    def _load_sequence_from_path(path):
         lowered = path.lower()
 
         if lowered.endswith(".txt"):
@@ -221,6 +220,7 @@ class App:
 
     def _get_segment_length(self):
         segment_text = self.segment_entry.get().strip()
+
         if not segment_text:
             raise ValueError("Segment length cannot be empty.")
 
@@ -271,71 +271,6 @@ class App:
 
         self._refresh_statistics_for_selected_motif()
 
-    def show_plot(self):
-        try:
-            self._prepare_selected_motif_statistics()
-            fig = create_motif_distribution_figure(
-                self.last_statistics_df,
-                self.last_selected_motif
-            )
-            self._show_figure_window("Distribution Plot", fig)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate plot: {e}")
-
-    def show_interactive_positions_plot(self):
-        if not self.last_results or not self.sequence:
-            messagebox.showerror("Error", "No motif analysis results available.")
-            return
-
-        try:
-            os.makedirs("results", exist_ok=True)
-            output_html = interactive_motif_positions(
-                self.last_results,
-                len(self.sequence)
-            )
-
-            info_window = tk.Toplevel(self.root)
-            info_window.title("Interactive Motif Plot")
-            info_window.geometry("600x220")
-            info_window.resizable(False, False)
-
-            label1 = tk.Label(
-                info_window,
-                text="Interactive motif plot has been created successfully.",
-                font=("Arial", 11, "bold")
-            )
-            label1.pack(pady=10)
-
-            label2 = tk.Label(
-                info_window,
-                text=f"Saved file:\n{output_html}",
-                wraplength=550,
-                justify="center"
-            )
-            label2.pack(pady=10)
-
-            open_button = tk.Button(
-                info_window,
-                text="Open in browser",
-                command=lambda: webbrowser.open(output_html),
-                width=20
-            )
-            open_button.pack(pady=10)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
-
-    def show_multi_motif_plot(self):
-        if not self.last_results:
-            messagebox.showerror("Error", "No motif analysis results available.")
-            return
-
-        try:
-            fig = create_multiple_motifs_summary_figure(self.last_results)
-            self._show_figure_window("Multi-Motif Summary", fig)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
-
     def _show_figure_window(self, title, fig):
         plot_window = tk.Toplevel(self.root)
         plot_window.title(title)
@@ -377,11 +312,12 @@ class App:
         text_widget.config(state="disabled")
 
     def _format_analysis_results(self, motifs, segment_length, results):
-        output = []
-        output.append("ANALYSIS RESULTS\n")
-        output.append(f"Sequence length: {len(self.sequence)}")
-        output.append(f"Recognized motifs: {', '.join(motifs)}")
-        output.append(f"Segment length: {segment_length}\n")
+        output = [
+            "ANALYSIS RESULTS\n",
+            f"Sequence length: {len(self.sequence)}",
+            f"Recognized motifs: {', '.join(motifs)}",
+            f"Segment length: {segment_length}\n",
+        ]
 
         for result in results:
             output.append(
@@ -396,11 +332,12 @@ class App:
         return "\n".join(output)
 
     def _format_comparison_results(self, motifs):
-        output = []
-        output.append("COMPARISON RESULTS\n")
-        output.append(f"Sequence 1 length: {len(self.sequence)}")
-        output.append(f"Sequence 2 length: {len(self.sequence_2)}")
-        output.append(f"Recognized motifs: {', '.join(motifs)}\n")
+        output = [
+            "COMPARISON RESULTS\n",
+            f"Sequence 1 length: {len(self.sequence)}",
+            f"Sequence 2 length: {len(self.sequence_2)}",
+            f"Recognized motifs: {', '.join(motifs)}\n",
+        ]
 
         if self.last_comparison_df.empty:
             output.append("No comparison data to display.")
@@ -532,12 +469,8 @@ class App:
             messagebox.showerror("Error", f"Failed to export CSV: {e}")
 
     def show_plot(self):
-        if not self.last_results or not self.sequence:
-            messagebox.showerror("Error", "No analysis results available for plotting.")
-            return
-
         try:
-            self._refresh_statistics_for_selected_motif()
+            self._prepare_selected_motif_statistics()
             fig = create_motif_distribution_figure(
                 self.last_statistics_df,
                 self.last_selected_motif
@@ -545,6 +478,17 @@ class App:
             self._show_figure_window("Distribution Plot", fig)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate plot: {e}")
+
+    def show_multi_motif_plot(self):
+        if not self.last_results:
+            messagebox.showerror("Error", "No motif analysis results available.")
+            return
+
+        try:
+            fig = create_multiple_motifs_summary_figure(self.last_results)
+            self._show_figure_window("Multi-Motif Summary", fig)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
 
     def show_positions_plot(self):
         if not self.last_results or not self.sequence:
@@ -557,11 +501,50 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate motif position plot: {e}")
 
-    def save_plot(self):
+    def show_interactive_positions_plot(self):
         if not self.last_results or not self.sequence:
-            messagebox.showerror("Error", "No analysis results available for saving.")
+            messagebox.showerror("Error", "No motif analysis results available.")
             return
 
+        try:
+            os.makedirs("results", exist_ok=True)
+            output_html = interactive_motif_positions(
+                self.last_results,
+                len(self.sequence)
+            )
+
+            info_window = tk.Toplevel(self.root)
+            info_window.title("Interactive Motif Plot")
+            info_window.geometry("600x220")
+            info_window.resizable(False, False)
+
+            label1 = tk.Label(
+                info_window,
+                text="Interactive motif plot has been created successfully.",
+                font=("Arial", 11, "bold")
+            )
+            label1.pack(pady=10)
+
+            label2 = tk.Label(
+                info_window,
+                text=f"Saved file:\n{output_html}",
+                wraplength=550,
+                justify="center"
+            )
+            label2.pack(pady=10)
+
+            open_button = tk.Button(
+                info_window,
+                text="Open in browser",
+                command=lambda: webbrowser.open(output_html),
+                width=20
+            )
+            open_button.pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
+
+    def save_plot(self):
         output_path = filedialog.asksaveasfilename(
             defaultextension=".png",
             filetypes=[("PNG files", "*.png")]
@@ -571,7 +554,7 @@ class App:
             return
 
         try:
-            self._refresh_statistics_for_selected_motif()
+            self._prepare_selected_motif_statistics()
             plot_motif_distribution(
                 self.last_statistics_df,
                 self.last_selected_motif,
@@ -583,10 +566,6 @@ class App:
             messagebox.showerror("Error", f"Failed to save plot: {e}")
 
     def export_pdf(self):
-        if not self.last_results or not self.sequence:
-            messagebox.showerror("Error", "No analysis results available for PDF export.")
-            return
-
         output_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")]
@@ -596,7 +575,7 @@ class App:
             return
 
         try:
-            self._refresh_statistics_for_selected_motif()
+            self._prepare_selected_motif_statistics()
             export_report_to_pdf(
                 self.last_statistics_df,
                 self.last_selected_motif,
