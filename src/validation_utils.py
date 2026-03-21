@@ -5,7 +5,7 @@ DNA_PATTERN = re.compile(r"^[ATCGN]+$", re.IGNORECASE)
 
 
 def normalize_sequence(sequence: str) -> str:
-    return sequence.replace("\n", "").replace(" ", "").strip().upper()
+    return "".join(sequence.split()).upper()
 
 
 def validate_dna_sequence(sequence: str) -> None:
@@ -22,6 +22,34 @@ def validate_motif(motif: str) -> None:
 
     if not DNA_PATTERN.fullmatch(motif):
         raise ValueError("Motif contains invalid characters. Allowed: A, T, C, G, N.")
+
+
+def validate_motifs_against_sequence(motifs: list[str], sequence: str) -> None:
+    too_long_motifs = [motif for motif in motifs if len(motif) > len(sequence)]
+
+    if too_long_motifs:
+        joined = ", ".join(too_long_motifs)
+        raise ValueError(
+            f"Motif is longer than the loaded sequence: {joined}. "
+            f"Please enter motifs shorter than or equal to sequence length."
+        )
+
+
+def get_sequence_warning(sequence: str) -> str | None:
+    if not sequence:
+        return None
+
+    n_count = sequence.upper().count("N")
+    n_ratio = n_count / len(sequence)
+
+    if n_ratio >= 0.1:
+        return (
+            f"Warning: the sequence contains {n_count} unknown nucleotides ('N'), "
+            f"which is {n_ratio:.1%} of the sequence length. "
+            f"This may affect motif analysis results."
+        )
+
+    return None
 
 
 def normalize_motifs(motifs: list[str]) -> list[str]:

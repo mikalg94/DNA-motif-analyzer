@@ -1,6 +1,13 @@
 import pytest
 
-from src.validation_utils import normalize_motifs, validate_dna_sequence, validate_motif
+from src.validation_utils import (
+    get_sequence_warning,
+    normalize_motifs,
+    normalize_sequence,
+    validate_dna_sequence,
+    validate_motifs_against_sequence,
+    validate_motif,
+)
 
 
 def test_validate_dna_sequence_valid():
@@ -30,3 +37,28 @@ def test_normalize_motifs_empty_values():
 def test_validate_dna_sequence_empty():
     with pytest.raises(ValueError):
         validate_dna_sequence("")
+
+
+def test_normalize_sequence_removes_all_whitespace():
+    sequence = "ATG C\tTA\nGG\r"
+    assert normalize_sequence(sequence) == "ATGCTAGG"
+
+
+def test_validate_motifs_against_sequence_too_long():
+    with pytest.raises(ValueError):
+        validate_motifs_against_sequence(["ATGCGT"], "ATG")
+
+
+def test_validate_motifs_against_sequence_valid():
+    validate_motifs_against_sequence(["ATG", "TA"], "ATGCGT")
+
+
+def test_get_sequence_warning_for_many_unknown_bases():
+    warning = get_sequence_warning("ATGNNNNNNN")
+    assert warning is not None
+    assert "unknown nucleotides" in warning
+
+
+def test_get_sequence_warning_for_clean_sequence():
+    warning = get_sequence_warning("ATGCGTATGC")
+    assert warning is None

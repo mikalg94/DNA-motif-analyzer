@@ -25,7 +25,11 @@ from src.motif_analysis import (
     compare_sequences,
 )
 from src.ncbi_utils import fetch_sequence_from_ncbi
-from src.validation_utils import normalize_motifs
+from src.validation_utils import (
+    get_sequence_warning,
+    normalize_motifs,
+    validate_motifs_against_sequence,
+)
 
 from src.gui_sections import (
     build_main_layout,
@@ -82,6 +86,14 @@ class App:
             self.sequence_2 = sequence
             self.file_label_2.config(text=source_label)
 
+    def _show_sequence_warning_if_needed(self, sequence):
+        warning_message = get_sequence_warning(sequence)
+        if warning_message:
+            messagebox.showwarning("Sequence Warning", warning_message)
+
+    def _validate_analysis_inputs(self, motifs, sequence):
+        validate_motifs_against_sequence(motifs, sequence)
+
     def _set_ncbi_buttons_state(self, state):
         self.fetch_button.config(state=state)
         self.fetch_button_2.config(state=state)
@@ -89,6 +101,8 @@ class App:
         self.example_button_2.config(state=state)
 
     def _handle_ncbi_success(self, target, accession_id, sequence, description=None, is_example=False):
+        self._show_sequence_warning_if_needed(sequence)
+
         if is_example:
             self._set_sequence_data(target, sequence, f"Loaded example from NCBI: {accession_id}")
             messagebox.showinfo(
@@ -166,6 +180,7 @@ class App:
                 success_message = f"Second sequence loaded successfully.\nLength: {len(sequence)}"
 
             self._set_sequence_data(target, sequence, selected_path)
+            self._show_sequence_warning_if_needed(sequence)
             messagebox.showinfo("Success", success_message)
 
         except Exception as e:
@@ -454,6 +469,7 @@ class App:
 
         try:
             motifs, segment_length = self._get_motifs_and_segment_length()
+            self._validate_analysis_inputs(motifs, self.sequence)
             results = self._prepare_analysis_results(motifs, segment_length)
             final_text = self._format_analysis_results(motifs, segment_length, results)
             self._save_analysis_history(motifs, segment_length, results)
@@ -472,6 +488,8 @@ class App:
 
         try:
             motifs, _ = self._get_motifs_and_segment_length()
+            self._validate_analysis_inputs(motifs, self.sequence)
+            self._validate_analysis_inputs(motifs, self.sequence_2)
             self._prepare_comparison_results(motifs)
             final_text = self._format_comparison_results(motifs)
             self._save_comparison_history(motifs)
