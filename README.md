@@ -63,6 +63,13 @@ Przykład:
 - Biopython
 - Pytest
 
+## Tryb CLI
+
+Aplikację można uruchomić w trybie tekstowym:
+
+```bash
+python main.py --file data/example_sequence.fasta --motifs ATG,TATA --segment 10
+
 ## Struktura projektu
 
 ```text
