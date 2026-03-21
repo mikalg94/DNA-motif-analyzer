@@ -98,6 +98,9 @@ class App:
         self.show_positions_button.config(
             state="normal" if has_analysis_results else "disabled"
         )
+        self.show_highlighted_sequence_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
         self.show_interactive_button.config(
             state="normal" if has_analysis_results else "disabled"
         )
@@ -662,6 +665,138 @@ class App:
         except Exception as e:
             self._set_status("Failed to generate motif position plot")
             messagebox.showerror("Error", f"Failed to generate motif position plot: {e}")
+
+    def _get_motif_colors(self):
+        palette = [
+            "#fff59d",  # jasny żółty
+            "#a5d6a7",  # jasny zielony
+            "#90caf9",  # jasny niebieski
+            "#ffab91",  # jasny pomarańczowy
+            "#ce93d8",  # jasny fiolet
+            "#80deea",  # turkus
+            "#f48fb1",  # róż
+            "#c5e1a5",  # oliwkowy
+        ]
+
+        return {
+            result["motif"]: palette[index % len(palette)]
+            for index, result in enumerate(self.last_results)
+        }
+
+    def _insert_sequence_with_line_breaks(self, text_widget, sequence, line_length=80):
+        for i in range(0, len(sequence), line_length):
+            chunk = sequence[i:i + line_length]
+            text_widget.insert(tk.END, chunk + "\n")
+
+    def _highlight_motif_occurrences(self, text_widget, sequence, line_length=80):
+        motif_colors = self._get_motif_colors()
+
+        for result in self.last_results:
+            motif = result["motif"]
+            positions = result["positions"]
+            color = motif_colors[motif]
+
+            tag_name = f"motif_{motif}"
+            text_widget.tag_config(tag_name, background=color)
+
+            motif_length = len(motif)
+
+            for pos in positions:
+                start_row = pos // line_length + 1
+                start_col = pos % line_length
+                remaining = motif_length
+                current_pos = pos
+
+                while remaining > 0:
+                    row = current_pos // line_length + 1
+                    col = current_pos % line_length
+                    available_in_line = line_length - col
+                    chars_in_this_line = min(remaining, available_in_line)
+
+                    start_index = f"{row}.{col}"
+                    end_index = f"{row}.{col + chars_in_this_line}"
+
+                    text_widget.tag_add(tag_name, start_index, end_index)
+
+                    current_pos += chars_in_this_line
+                    remaining -= chars_in_this_line
+
+    def show_highlighted_sequence(self):
+        if not self.last_results or not self.sequence:
+            self._set_status("No analysis results available")
+            messagebox.showerror("Error", "No motif analysis results available.")
+            return
+
+        try:
+            self._set_status("Generating highlighted sequence view...")
+
+            sequence_window = tk.Toplevel(self.root)
+            sequence_window.title("Highlighted DNA Sequence")
+            sequence_window.geometry("1100x700")
+            sequence_window.resizable(True, True)
+
+            top_frame = tk.Frame(sequence_window)
+            top_frame.pack(fill="x", padx=10, pady=10)
+
+            info_label = tk.Label(
+                top_frame,
+                text=(
+                    f"Sequence length: {len(self.sequence)} | "
+                    f"Motifs: {', '.join([result['motif'] for result in self.last_results])}"
+                ),
+                font=("Arial", 10, "bold"),
+                anchor="w",
+                justify="left"
+            )
+            info_label.pack(fill="x")
+
+            legend_frame = tk.Frame(sequence_window)
+            legend_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+            motif_colors = self._get_motif_colors()
+            for motif, color in motif_colors.items():
+                legend_item = tk.Label(
+                    legend_frame,
+                    text=f" {motif} ",
+                    bg=color,
+                    relief="solid",
+                    borderwidth=1,
+                    padx=5,
+                    pady=2
+                )
+                legend_item.pack(side="left", padx=5)
+
+            text_frame = tk.Frame(sequence_window)
+            text_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+            scrollbar_y = tk.Scrollbar(text_frame, orient="vertical")
+            scrollbar_y.pack(side="right", fill="y")
+
+            scrollbar_x = tk.Scrollbar(text_frame, orient="horizontal")
+            scrollbar_x.pack(side="bottom", fill="x")
+
+            text_widget = tk.Text(
+                text_frame,
+                wrap="none",
+                font=("Courier New", 11),
+                yscrollcommand=scrollbar_y.set,
+                xscrollcommand=scrollbar_x.set
+            )
+            text_widget.pack(side="left", fill="both", expand=True)
+
+            scrollbar_y.config(command=text_widget.yview)
+            scrollbar_x.config(command=text_widget.xview)
+
+            self._insert_sequence_with_line_breaks(text_widget, self.sequence, line_length=80)
+            self._highlight_motif_occurrences(text_widget, self.sequence, line_length=80)
+
+            text_widget.config(state="disabled")
+
+            self._set_status("Highlighted sequence view generated")
+
+        except Exception as e:
+            self._set_status("Failed to generate highlighted sequence view")
+            messagebox.showerror("Error", f"Failed to generate highlighted sequence view: {e}")
 
     def show_interactive_positions_plot(self):
         if not self.last_results or not self.sequence:

@@ -267,6 +267,14 @@ def build_actions_frame(app):
     )
     app.show_positions_button.pack(pady=3)
 
+    app.show_highlighted_sequence_button = tk.Button(
+        app.visualization_actions_frame,
+        text="Show Highlighted Sequence",
+        command=app.show_highlighted_sequence,
+        width=25
+    )
+    app.show_highlighted_sequence_button.pack(pady=3)
+
     app.show_interactive_button = tk.Button(
         app.visualization_actions_frame,
         text="Open Interactive Motif Plot",
