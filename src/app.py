@@ -5,7 +5,7 @@ from datetime import datetime
 
 import pandas as pd
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 from src.export_utils import (
@@ -61,6 +61,8 @@ class App:
 
         self.file_path = None
         self.file_path_2 = None
+        self.last_analyzed_sequence = ""
+        self.last_analyzed_sequence_label = ""
         self.sequence = ""
         self.sequence_2 = ""
 
@@ -68,6 +70,7 @@ class App:
         self.last_statistics_df = None
         self.last_selected_motif = None
         self.last_comparison_df = None
+        self.current_theme = "light"
 
         build_main_layout(self)
         build_title(self)
@@ -77,7 +80,61 @@ class App:
         build_actions_frame(self)
         build_results_frame(self)
         build_status_bar(self)
+        self._configure_styles()
         self._update_action_buttons_state()
+
+    def _configure_styles(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+
+        if self.current_theme == "dark":
+            bg = "#22252b"
+            fg = "#f1f1f1"
+            field_bg = "#2d3138"
+            accent = "#3a7bd5"
+            text_bg = "#1e2127"
+            text_fg = "#f1f1f1"
+        else:
+            bg = "#f4f6f8"
+            fg = "#1f1f1f"
+            field_bg = "#ffffff"
+            accent = "#d9e2f2"
+            text_bg = "#ffffff"
+            text_fg = "#1f1f1f"
+
+        self.root.configure(bg=bg)
+
+        style.configure(".", background=bg, foreground=fg)
+        style.configure("TFrame", background=bg)
+        style.configure("TLabel", background=bg, foreground=fg)
+        style.configure("TLabelFrame", background=bg, foreground=fg)
+        style.configure("TLabelFrame.Label", background=bg, foreground=fg)
+        style.configure("TButton", padding=6)
+        style.configure("TEntry", fieldbackground=field_bg)
+        style.configure("TCombobox", fieldbackground=field_bg)
+        style.configure("Treeview", background=field_bg, fieldbackground=field_bg, foreground=fg)
+        style.configure("Treeview.Heading", padding=6)
+        style.configure("TNotebook", background=bg)
+        style.configure("TNotebook.Tab", padding=(10, 5))
+
+        try:
+            self.result_text.configure(
+                bg=text_bg,
+                fg=text_fg,
+                insertbackground=text_fg
+            )
+        except Exception:
+            pass
+
+        try:
+            self.main_canvas.configure(bg=bg, highlightthickness=0)
+        except Exception:
+            pass
+
+    def toggle_theme(self):
+        self.current_theme = "dark" if self.current_theme == "light" else "light"
+        self._configure_styles()
+        self._set_status(f"Theme changed to {self.current_theme}")
 
     def _update_action_buttons_state(self):
         has_sequence_1 = bool(self.sequence)
@@ -707,6 +764,8 @@ class App:
 
             results = analyze_multiple_motifs(sequence, motifs)
 
+            self.last_analyzed_sequence = sequence
+            self.last_analyzed_sequence_label = sequence_label
             self.last_results = results
             self.last_comparison_df = None
 
@@ -743,12 +802,15 @@ class App:
                 dataframe=self.last_statistics_df
             )
 
-            self._update_action_buttons_state()
+            if hasattr(self, "_update_action_buttons_state"):
+                self._update_action_buttons_state()
+
             self._set_status(f"Analysis complete for {sequence_label}")
 
         except Exception as e:
             self._set_status("Analysis failed")
             messagebox.showerror("Error", str(e))
+
 
     def run_analysis_sequence_1(self):
         self._run_analysis_for_sequence(self.sequence, "Sequence 1")
@@ -757,29 +819,7 @@ class App:
         self._run_analysis_for_sequence(self.sequence_2, "Sequence 2")
 
     def run_analysis(self):
-        if not self.sequence:
-            self._set_status("Analysis failed")
-            messagebox.showerror("Error", "Please load a sequence from file or NCBI.")
-            return
-
-        try:
-            self._set_status("Running analysis...")
-            motifs, segment_length = self._get_motifs_and_segment_length()
-            self._validate_analysis_inputs(motifs, self.sequence)
-            results = self._prepare_analysis_results(motifs, segment_length)
-            display_results = self._filter_and_sort_results(results)
-            final_text = self._format_analysis_results(motifs, segment_length, display_results)
-            self._save_analysis_history(motifs, segment_length, results)
-            self._display_results(
-                "Analysis Results",
-                final_text,
-                dataframe=self.last_statistics_df
-            )
-            self._update_action_buttons_state()
-            self._set_status("Analysis complete")
-        except Exception as e:
-            self._set_status("Analysis failed")
-            messagebox.showerror("Error", str(e))
+        self.run_analysis_sequence_1()
 
     def run_comparison(self):
         if not self.sequence:
