@@ -219,17 +219,7 @@ class App:
         )
         thread.start()
 
-    def _get_motifs_and_segment_length(self):
-        motifs_text = self.motif_entry.get().strip()
-
-        if not motifs_text:
-            raise ValueError("Please enter at least one motif.")
-
-        motifs = normalize_motifs(motifs_text.split(","))
-
-        if not motifs:
-            raise ValueError("Please enter at least one valid motif.")
-
+    def _get_segment_length(self):
         segment_text = self.segment_entry.get().strip()
         if not segment_text:
             raise ValueError("Segment length cannot be empty.")
@@ -242,6 +232,20 @@ class App:
         if segment_length <= 0:
             raise ValueError("Segment length must be a positive integer.")
 
+        return segment_length
+
+    def _get_motifs_and_segment_length(self):
+        motifs_text = self.motif_entry.get().strip()
+
+        if not motifs_text:
+            raise ValueError("Please enter at least one motif.")
+
+        motifs = normalize_motifs(motifs_text.split(","))
+
+        if not motifs:
+            raise ValueError("Please enter at least one valid motif.")
+
+        segment_length = self._get_segment_length()
         return motifs, segment_length
 
     def _refresh_statistics_for_selected_motif(self):
