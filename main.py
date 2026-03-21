@@ -1,6 +1,5 @@
 import argparse
 import sys
-
 import tkinter as tk
 
 from src.app import App
@@ -14,10 +13,10 @@ def load_sequence(path):
 
     if path_lower.endswith(".txt"):
         return load_sequence_from_txt(path)
-    elif path_lower.endswith(".fasta") or path_lower.endswith(".fa"):
+    if path_lower.endswith(".fasta") or path_lower.endswith(".fa"):
         return load_sequence_from_fasta(path)
-    else:
-        raise ValueError("Unsupported file format. Use TXT, FASTA, or FA.")
+
+    raise ValueError("Unsupported file format. Use TXT, FASTA, or FA.")
 
 
 def run_cli(args):
@@ -25,14 +24,22 @@ def run_cli(args):
         sequence = load_sequence(args.file)
 
         motifs = normalize_motifs(args.motifs.split(","))
+        if not motifs:
+            raise ValueError("Please provide at least one valid motif.")
+
         segment_length = args.segment
+        if segment_length <= 0:
+            raise ValueError("Segment length must be a positive integer.")
+
+        mode = args.mode
 
         results = analyze_multiple_motifs(sequence, motifs)
 
         print("\n=== DNA MOTIF ANALYZER (CLI) ===")
         print(f"Sequence length: {len(sequence)}")
         print(f"Motifs: {', '.join(motifs)}")
-        print(f"Segment length: {segment_length}\n")
+        print(f"Segment length: {segment_length}")
+        print(f"Segment assignment mode: {mode}\n")
 
         for result in results:
             print(
@@ -41,13 +48,16 @@ def run_cli(args):
                 f"Positions: {result['positions']}"
             )
 
-        if motifs:
-            selected_motif = motifs[0]
-            df = build_statistics_dataframe(sequence, selected_motif, segment_length)
+        selected_motif = motifs[0]
+        df = build_statistics_dataframe(
+            sequence,
+            selected_motif,
+            segment_length,
+            mode=mode
+        )
 
-            print("\n--- Segment statistics ---")
-            print(df.to_string(index=False))
-
+        print(f"\n--- Segment statistics for motif {selected_motif} ---")
+        print(df.to_string(index=False))
         print("\n=== DONE ===\n")
 
     except Exception as e:
@@ -61,6 +71,13 @@ def main():
     parser.add_argument("--file", type=str, help="Path to sequence file (TXT/FASTA)")
     parser.add_argument("--motifs", type=str, help="Motifs separated by commas")
     parser.add_argument("--segment", type=int, default=10, help="Segment length")
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="start",
+        choices=["start", "full"],
+        help="Segment assignment mode: start or full"
+    )
 
     args = parser.parse_args()
 

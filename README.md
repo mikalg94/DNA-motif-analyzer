@@ -155,45 +155,36 @@ dna_motif_analyzer_project
     ├── test_io_utils.py
     ├── test_motif_analysis.py
     └── test_validation_utils.py
-🛠 Technologie
-Python
-Tkinter / ttk
-Pandas
-NumPy
-Matplotlib
-Plotly
-Biopython
-Pytest
-📌 Uwagi końcowe
-Motywy nakładające się na siebie są poprawnie wykrywane.
-Statystyki segmentowe bazują na pozycji startowej motywu.
-Wyniki dostępne są w formie tekstowej, tabelarycznej i graficznej.
-Aplikacja działa zarówno w trybie GUI, jak i CLI.
-👨‍💻 Autor
+## Technologie
 
-Projekt wykonany w ramach projektu zaliczeniowego.
+- Python
+- Tkinter / ttk
+- Pandas
+- NumPy
+- Matplotlib
+- Plotly
+- Biopython
+- Pytest
 
+## Uwagi dotyczące analizy segmentowej
 
----
+Aplikacja obsługuje dwa tryby przypisywania motywów do segmentów:
 
-# 📌 Git (na koniec)
+- `start` – motyw przypisywany jest do segmentu na podstawie pozycji startowej,
+- `full` – motyw liczony jest tylko wtedy, gdy cały mieści się w granicach segmentu.
+
+Opcję tę można wybrać zarówno w GUI, jak i w trybie CLI.
+
+## Użycie NumPy w projekcie
+
+Biblioteka NumPy została wykorzystana do:
+
+- obliczania GC-content i AT-content,
+- zliczania nieznanych nukleotydów `N`,
+- obliczania średniej liczby motywów na segment,
+- obsługi wybranych obliczeń segmentowych.
+
+## Tryb CLI
 
 ```bash
-git add README.md
-git commit -m "Finalna wersja README z pełną dokumentacją projektu"
-git push
-
-### Segmentacja sekwencji
-
-Motywy przypisywane są do segmentów na podstawie:
-
-- pozycji startowej (domyślnie),
-- lub pełnego zawarcia w segmencie.
-
-Opcja ta może być wybrana w ustawieniach analizy.
-
-### Uwagi dotyczące statystyk
-
-Statystyki segmentowe bazują na pozycji startowej motywu lub pełnym jego zawarciu w segmencie (zależnie od wybranej opcji).
-
-W przypadku dłuższych motywów może to wpływać na przypisanie ich do segmentów.
+python main.py --file data/example_sequence.fasta --motifs ATG,TATA --segment 10 --mode start
