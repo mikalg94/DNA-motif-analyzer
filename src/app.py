@@ -624,9 +624,7 @@ class App:
     def _display_results(self, window_title, content, dataframe=None):
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, content)
-
         self._display_dataframe_in_table(dataframe)
-        self._show_results_window(window_title, content)
 
     def _prepare_analysis_results(self, motifs, segment_length):
         results = analyze_multiple_motifs(self.sequence, motifs)
