@@ -9,12 +9,12 @@ from tkinter import filedialog, messagebox, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 from src.export_utils import (
+    create_gc_comparison_figure,
+    create_gc_content_figure,
+    create_gc_motif_overlay_figure,
     create_motif_distribution_figure,
     create_motif_positions_figure,
     create_multiple_motifs_summary_figure,
-    create_gc_content_figure,
-    create_gc_comparison_figure,
-    create_gc_motif_overlay_figure,
     export_report_to_pdf,
     export_results_to_csv,
     export_session_to_json,
@@ -29,8 +29,8 @@ from src.gui_sections import (
     build_main_layout,
     build_ncbi_frame,
     build_results_frame,
-    build_title,
     build_status_bar,
+    build_title,
 )
 from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
 from src.motif_analysis import (
@@ -61,8 +61,6 @@ class App:
 
         self.file_path = None
         self.file_path_2 = None
-        self.last_analyzed_sequence = ""
-        self.last_analyzed_sequence_label = ""
         self.sequence = ""
         self.sequence_2 = ""
 
@@ -70,6 +68,10 @@ class App:
         self.last_statistics_df = None
         self.last_selected_motif = None
         self.last_comparison_df = None
+
+        self.last_analyzed_sequence = ""
+        self.last_analyzed_sequence_label = ""
+
         self.current_theme = "light"
 
         build_main_layout(self)
@@ -80,6 +82,7 @@ class App:
         build_actions_frame(self)
         build_results_frame(self)
         build_status_bar(self)
+
         self._configure_styles()
         self._update_action_buttons_state()
 
@@ -91,14 +94,12 @@ class App:
             bg = "#22252b"
             fg = "#f1f1f1"
             field_bg = "#2d3138"
-            accent = "#3a7bd5"
             text_bg = "#1e2127"
             text_fg = "#f1f1f1"
         else:
             bg = "#f4f6f8"
             fg = "#1f1f1f"
             field_bg = "#ffffff"
-            accent = "#d9e2f2"
             text_bg = "#ffffff"
             text_fg = "#1f1f1f"
 
@@ -149,6 +150,7 @@ class App:
         self.compare_button.config(
             state="normal" if has_sequence_1 and has_sequence_2 else "disabled"
         )
+
         self.export_json_button.config(
             state="normal" if has_any_export_data or has_analysis_results else "disabled"
         )
@@ -386,7 +388,7 @@ class App:
         return motifs, segment_length
 
     def _refresh_statistics_for_selected_motif(self):
-        if not self.sequence:
+        if not self.last_analyzed_sequence:
             raise ValueError("Sequence is not loaded.")
 
         motif = self.selected_motif_var.get().strip()
@@ -394,20 +396,19 @@ class App:
             raise ValueError("Please select a motif.")
 
         segment_length = self._get_segment_length()
-
         self.last_selected_motif = motif
 
         mode = self.segment_mode_var.get()
 
         self.last_statistics_df = build_statistics_dataframe(
-            self.sequence,
+            self.last_analyzed_sequence,
             motif,
             segment_length,
             mode=mode
         )
 
     def _prepare_selected_motif_statistics(self):
-        if not self.last_results or not self.sequence:
+        if not self.last_results or not self.last_analyzed_sequence:
             raise ValueError("No analysis results available.")
 
         self._refresh_statistics_for_selected_motif()
@@ -427,30 +428,6 @@ class App:
 
         toolbar = NavigationToolbar2Tk(canvas, frame)
         toolbar.update()
-
-    def _show_results_window(self, title, content):
-        result_window = tk.Toplevel(self.root)
-        result_window.title(title)
-        result_window.geometry("1000x700")
-        result_window.resizable(True, True)
-
-        frame = tk.Frame(result_window)
-        frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-        scrollbar = tk.Scrollbar(frame)
-        scrollbar.pack(side="right", fill="y")
-
-        text_widget = tk.Text(
-            frame,
-            wrap="word",
-            yscrollcommand=scrollbar.set
-        )
-        text_widget.pack(side="left", fill="both", expand=True)
-
-        scrollbar.config(command=text_widget.yview)
-
-        text_widget.insert("1.0", content)
-        text_widget.config(state="disabled")
 
     def show_gc_plot(self):
         if self.last_statistics_df is not None:
@@ -474,17 +451,20 @@ class App:
         try:
             self._set_status("Generating GC comparison plot...")
             segment_length = self._get_segment_length()
+            mode = self.segment_mode_var.get()
 
             df1 = build_statistics_dataframe(
                 self.sequence,
                 self.last_selected_motif or "ATG",
-                segment_length
+                segment_length,
+                mode=mode
             )
 
             df2 = build_statistics_dataframe(
                 self.sequence_2,
                 self.last_selected_motif or "ATG",
-                segment_length
+                segment_length,
+                mode=mode
             )
 
             fig = create_gc_comparison_figure(df1, df2)
@@ -496,7 +476,7 @@ class App:
             messagebox.showerror("Error", f"Failed to generate GC comparison: {e}")
 
     def show_gc_motif_overlay(self):
-        if not self.last_results or not self.sequence:
+        if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No analysis results available")
             messagebox.showerror("Error", "No analysis results available.")
             return
@@ -508,7 +488,7 @@ class App:
             fig = create_gc_motif_overlay_figure(
                 self.last_statistics_df,
                 self.last_results,
-                len(self.sequence)
+                len(self.last_analyzed_sequence)
             )
 
             self._show_figure_window("GC + Motif Overlay", fig)
@@ -549,6 +529,40 @@ class App:
             ),
             "max_segment_text": max_segment_text,
         }
+
+    def _build_extended_sequence_statistics(self, motif, segment_length):
+        return self._build_extended_sequence_statistics_for_sequence(
+            self.last_analyzed_sequence,
+            motif,
+            segment_length
+        )
+
+    def _filter_and_sort_results(self, results):
+        processed_results = results[:]
+
+        if self.only_found_var.get():
+            processed_results = [
+                result for result in processed_results
+                if result["count"] > 0
+            ]
+
+        sort_mode = self.sort_results_var.get()
+
+        if sort_mode == "count_desc":
+            processed_results.sort(key=lambda item: item["count"], reverse=True)
+        elif sort_mode == "count_asc":
+            processed_results.sort(key=lambda item: item["count"])
+
+        top_n_text = self.top_n_entry.get().strip()
+        if top_n_text:
+            try:
+                top_n = int(top_n_text)
+                if top_n > 0:
+                    processed_results = processed_results[:top_n]
+            except ValueError:
+                raise ValueError("Top N must be a positive integer.")
+
+        return processed_results
 
     def _format_analysis_results_for_sequence(
         self,
@@ -591,66 +605,6 @@ class App:
 
         return "\n".join(output)
 
-    def _filter_and_sort_results(self, results):
-        processed_results = results[:]
-
-        if self.only_found_var.get():
-            processed_results = [
-                result for result in processed_results
-                if result["count"] > 0
-            ]
-
-        sort_mode = self.sort_results_var.get()
-
-        if sort_mode == "count_desc":
-            processed_results.sort(key=lambda item: item["count"], reverse=True)
-        elif sort_mode == "count_asc":
-            processed_results.sort(key=lambda item: item["count"])
-
-        top_n_text = self.top_n_entry.get().strip()
-        if top_n_text:
-            try:
-                top_n = int(top_n_text)
-                if top_n > 0:
-                    processed_results = processed_results[:top_n]
-            except ValueError:
-                raise ValueError("Top N must be a positive integer.")
-
-        return processed_results
-
-    def _format_analysis_results(self, motifs, segment_length, results):
-        selected_motif = self.last_selected_motif or motifs[0]
-        extended_stats = self._build_extended_sequence_statistics(
-            selected_motif,
-            segment_length
-        )
-
-        output = [
-            "ANALYSIS RESULTS\n",
-            f"Sequence length: {len(self.sequence)}",
-            f"GC content: {extended_stats['gc_content']}%",
-            f"AT content: {extended_stats['at_content']}%",
-            f"Unknown bases (N): {extended_stats['unknown_bases']}",
-            f"Recognized motifs: {', '.join(motifs)}",
-            f"Segment length: {segment_length}",
-            f"Selected motif for detailed statistics: {selected_motif}",
-            f"Motif density per 1000 nt: {extended_stats['motif_density_per_1000_nt']}",
-            f"Average motifs per segment: {extended_stats['average_motifs_per_segment']}",
-            f"Segment with highest count: {extended_stats['max_segment_text']}\n",
-        ]
-
-        for result in results:
-            output.append(
-                f"Motif: {result['motif']} | "
-                f"Count: {result['count']} | "
-                f"Positions: {result['positions']}"
-            )
-
-        output.append("\nSegment statistics for selected motif:\n")
-        output.append(self.last_statistics_df.to_string(index=False))
-
-        return "\n".join(output)
-
     def _format_comparison_results(self, motifs):
         output = [
             "COMPARISON RESULTS\n",
@@ -670,7 +624,7 @@ class App:
         history_entry = {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "operation": "analysis",
-            "sequence_1_length": len(self.sequence),
+            "sequence_1_length": len(self.last_analyzed_sequence),
             "sequence_2_length": "",
             "motifs": ", ".join(motifs),
             "segment_length": segment_length,
@@ -696,6 +650,27 @@ class App:
             "motifs": ", ".join(motifs),
             "segment_length": "",
             "details": "; ".join(comparison_details)
+        }
+        save_analysis_history(history_entry)
+
+    def _save_analysis_history_for_sequence(
+        self,
+        sequence,
+        sequence_label,
+        motifs,
+        segment_length,
+        results
+    ):
+        history_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "operation": f"analysis_{sequence_label.lower().replace(' ', '_')}",
+            "sequence_1_length": len(sequence),
+            "sequence_2_length": "",
+            "motifs": ", ".join(motifs),
+            "segment_length": segment_length,
+            "details": "; ".join(
+                [f"{result['motif']}={result['count']}" for result in results]
+            )
         }
         save_analysis_history(history_entry)
 
@@ -725,24 +700,6 @@ class App:
         self.result_text.insert(tk.END, content)
         self._display_dataframe_in_table(dataframe)
 
-    def _prepare_analysis_results(self, motifs, segment_length):
-        results = analyze_multiple_motifs(self.sequence, motifs)
-
-        self.last_results = results
-        self.last_comparison_df = None
-
-        self.selected_motif_combobox["values"] = motifs
-        self.selected_motif_combobox.set(motifs[0])
-
-        self.last_selected_motif = motifs[0]
-        self.last_statistics_df = build_statistics_dataframe(
-            self.sequence,
-            self.last_selected_motif,
-            segment_length
-        )
-
-        return results
-
     def _prepare_comparison_results(self, motifs):
         self.last_comparison_df = compare_sequences(
             self.sequence,
@@ -763,11 +720,12 @@ class App:
             self._validate_analysis_inputs(motifs, sequence)
 
             results = analyze_multiple_motifs(sequence, motifs)
+            display_results = self._filter_and_sort_results(results)
 
-            self.last_analyzed_sequence = sequence
-            self.last_analyzed_sequence_label = sequence_label
             self.last_results = results
             self.last_comparison_df = None
+            self.last_analyzed_sequence = sequence
+            self.last_analyzed_sequence_label = sequence_label
 
             self.selected_motif_combobox["values"] = motifs
             self.selected_motif_combobox.set(motifs[0])
@@ -785,7 +743,7 @@ class App:
                 sequence_label,
                 motifs,
                 segment_length,
-                results
+                display_results
             )
 
             self._save_analysis_history_for_sequence(
@@ -802,15 +760,12 @@ class App:
                 dataframe=self.last_statistics_df
             )
 
-            if hasattr(self, "_update_action_buttons_state"):
-                self._update_action_buttons_state()
-
+            self._update_action_buttons_state()
             self._set_status(f"Analysis complete for {sequence_label}")
 
         except Exception as e:
             self._set_status("Analysis failed")
             messagebox.showerror("Error", str(e))
-
 
     def run_analysis_sequence_1(self):
         self._run_analysis_for_sequence(self.sequence, "Sequence 1")
@@ -837,7 +792,9 @@ class App:
             motifs, _ = self._get_motifs_and_segment_length()
             self._validate_analysis_inputs(motifs, self.sequence)
             self._validate_analysis_inputs(motifs, self.sequence_2)
+
             self._prepare_comparison_results(motifs)
+
             if self.only_found_var.get():
                 self.last_comparison_df = self.last_comparison_df[
                     (self.last_comparison_df["sequence_1_count"] > 0) |
@@ -864,6 +821,7 @@ class App:
                         self.last_comparison_df = self.last_comparison_df.head(top_n)
                 except ValueError:
                     raise ValueError("Top N must be a positive integer.")
+
             final_text = self._format_comparison_results(motifs)
             self._save_comparison_history(motifs)
             self._display_results(
@@ -873,17 +831,19 @@ class App:
             )
             self._update_action_buttons_state()
             self._set_status("Comparison complete")
+
         except Exception as e:
             self._set_status("Comparison failed")
             messagebox.showerror("Error", f"Comparison failed: {e}")
 
     def _build_session_data(self):
-        session_data = {
+        return {
             "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "sequence_1_length": len(self.sequence) if self.sequence else 0,
             "sequence_2_length": len(self.sequence_2) if self.sequence_2 else 0,
             "file_path_1": self.file_path,
             "file_path_2": self.file_path_2,
+            "last_analyzed_sequence_label": self.last_analyzed_sequence_label,
             "selected_motif": self.last_selected_motif,
             "analysis_results": self.last_results,
             "statistics_dataframe": (
@@ -895,8 +855,6 @@ class App:
                 if self.last_comparison_df is not None else []
             ),
         }
-
-        return session_data
 
     def export_json(self):
         if (
@@ -963,7 +921,10 @@ class App:
                 self.last_statistics_df,
                 self.last_selected_motif
             )
-            self._show_figure_window("Distribution Plot", fig)
+            self._show_figure_window(
+                f"{self.last_analyzed_sequence_label} Distribution Plot",
+                fig
+            )
             self._set_status("Distribution plot generated")
         except Exception as e:
             self._set_status("Failed to generate plot")
@@ -985,15 +946,18 @@ class App:
             messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
 
     def show_positions_plot(self):
-        if not self.last_results or not self.sequence:
+        if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No motif analysis results available")
             messagebox.showerror("Error", "No motif analysis results available.")
             return
 
         try:
             self._set_status("Generating motif positions plot...")
-            fig = create_motif_positions_figure(self.last_results, len(self.sequence))
-            self._show_figure_window("Motif Positions", fig)
+            fig = create_motif_positions_figure(self.last_results, len(self.last_analyzed_sequence))
+            self._show_figure_window(
+                f"{self.last_analyzed_sequence_label} Motif Positions",
+                fig
+            )
             self._set_status("Motif positions plot generated")
         except Exception as e:
             self._set_status("Failed to generate motif position plot")
@@ -1001,14 +965,14 @@ class App:
 
     def _get_motif_colors(self):
         palette = [
-            "#fff59d",  # jasny żółty
-            "#a5d6a7",  # jasny zielony
-            "#90caf9",  # jasny niebieski
-            "#ffab91",  # jasny pomarańczowy
-            "#ce93d8",  # jasny fiolet
-            "#80deea",  # turkus
-            "#f48fb1",  # róż
-            "#c5e1a5",  # oliwkowy
+            "#fff59d",
+            "#a5d6a7",
+            "#90caf9",
+            "#ffab91",
+            "#ce93d8",
+            "#80deea",
+            "#f48fb1",
+            "#c5e1a5",
         ]
 
         return {
@@ -1035,8 +999,6 @@ class App:
             motif_length = len(motif)
 
             for pos in positions:
-                start_row = pos // line_length + 1
-                start_col = pos % line_length
                 remaining = motif_length
                 current_pos = pos
 
@@ -1055,7 +1017,7 @@ class App:
                     remaining -= chars_in_this_line
 
     def show_highlighted_sequence(self):
-        if not self.last_results or not self.sequence:
+        if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No analysis results available")
             messagebox.showerror("Error", "No motif analysis results available.")
             return
@@ -1064,7 +1026,7 @@ class App:
             self._set_status("Generating highlighted sequence view...")
 
             sequence_window = tk.Toplevel(self.root)
-            sequence_window.title("Highlighted DNA Sequence")
+            sequence_window.title(f"Highlighted DNA Sequence - {self.last_analyzed_sequence_label}")
             sequence_window.geometry("1100x700")
             sequence_window.resizable(True, True)
 
@@ -1074,7 +1036,8 @@ class App:
             info_label = tk.Label(
                 top_frame,
                 text=(
-                    f"Sequence length: {len(self.sequence)} | "
+                    f"{self.last_analyzed_sequence_label} | "
+                    f"Sequence length: {len(self.last_analyzed_sequence)} | "
                     f"Motifs: {', '.join([result['motif'] for result in self.last_results])}"
                 ),
                 font=("Arial", 10, "bold"),
@@ -1120,11 +1083,10 @@ class App:
             scrollbar_y.config(command=text_widget.yview)
             scrollbar_x.config(command=text_widget.xview)
 
-            self._insert_sequence_with_line_breaks(text_widget, self.sequence, line_length=80)
-            self._highlight_motif_occurrences(text_widget, self.sequence, line_length=80)
+            self._insert_sequence_with_line_breaks(text_widget, self.last_analyzed_sequence, line_length=80)
+            self._highlight_motif_occurrences(text_widget, self.last_analyzed_sequence, line_length=80)
 
             text_widget.config(state="disabled")
-
             self._set_status("Highlighted sequence view generated")
 
         except Exception as e:
@@ -1132,7 +1094,7 @@ class App:
             messagebox.showerror("Error", f"Failed to generate highlighted sequence view: {e}")
 
     def show_interactive_positions_plot(self):
-        if not self.last_results or not self.sequence:
+        if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No motif analysis results available")
             messagebox.showerror("Error", "No motif analysis results available.")
             return
@@ -1142,7 +1104,7 @@ class App:
             os.makedirs("results", exist_ok=True)
             output_html = interactive_motif_positions(
                 self.last_results,
-                len(self.sequence)
+                len(self.last_analyzed_sequence)
             )
 
             info_window = tk.Toplevel(self.root)
@@ -1219,7 +1181,7 @@ class App:
             export_report_to_pdf(
                 self.last_statistics_df,
                 self.last_selected_motif,
-                len(self.sequence),
+                len(self.last_analyzed_sequence),
                 output_path
             )
             self._set_status("PDF exported")
@@ -1227,27 +1189,6 @@ class App:
         except Exception as e:
             self._set_status("PDF export failed")
             messagebox.showerror("Error", f"Failed to export PDF: {e}")
-
-    def _save_analysis_history_for_sequence(
-        self,
-        sequence,
-        sequence_label,
-        motifs,
-        segment_length,
-        results
-    ):
-        history_entry = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "operation": f"analysis_{sequence_label.lower().replace(' ', '_')}",
-            "sequence_1_length": len(sequence),
-            "sequence_2_length": "",
-            "motifs": ", ".join(motifs),
-            "segment_length": segment_length,
-            "details": "; ".join(
-                [f"{result['motif']}={result['count']}" for result in results]
-            )
-        }
-        save_analysis_history(history_entry)
 
     def show_analysis_history(self):
         history_path = "results/analysis_history.csv"
