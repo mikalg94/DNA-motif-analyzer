@@ -1,132 +1,73 @@
-# DNA Motif Analyzer
+# 🧬 DNA Motif Analyzer
 
-DNA Motif Analyzer to aplikacja napisana w Pythonie do analizy sekwencji DNA i wyszukiwania motywów takich jak ATG, TATA czy CGCG.
+Aplikacja w Pythonie do analizy sekwencji DNA i wyszukiwania motywów takich jak **ATG, TATA, CGCG** oraz motywów z symbolami **IUPAC**.
+
+Projekt realizuje zarówno wariant minimalny, jak i rozszerzony projektu zaliczeniowego.
 
 ---
 
-## 🧬 Opis projektu
+# 📌 Opis projektu
 
 Aplikacja umożliwia:
 
-- wczytywanie sekwencji DNA z plików TXT, FASTA i FA,
-- pobieranie sekwencji z bazy NCBI,
-- wyszukiwanie jednego lub wielu motywów,
-- wyznaczanie pozycji wystąpień motywów,
-- zliczanie liczby wystąpień,
-- analizę segmentową sekwencji,
-- porównanie dwóch sekwencji,
-- wizualizację wyników (Matplotlib, Plotly),
-- eksport wyników do CSV, PDF i JSON,
-- interaktywną wizualizację pozycji motywów,
-- pracę w trybie GUI oraz CLI.
+## ✅ Wariant minimalny
+- wczytywanie sekwencji DNA z plików **TXT / FASTA / FA**
+- wyszukiwanie motywów i ich pozycji
+- zliczanie liczby wystąpień
+- segmentację sekwencji (NumPy / Pandas)
+- analizę statystyczną
+- wizualizację (wykres słupkowy)
+- GUI do wyboru pliku i motywu
+- eksport wyników do **CSV**
+
+## 🚀 Wariant rozszerzony
+- pobieranie sekwencji z **NCBI (GenBank API – Biopython)**
+- obsługa wielu motywów jednocześnie
+- porównanie dwóch sekwencji
+- interaktywna wizualizacja (Plotly – HTML)
+- eksport:
+  - CSV
+  - PDF (raport)
+  - JSON (sesja)
+- dodatkowe statystyki:
+  - GC-content
+  - AT-content
+  - gęstość motywów
+- historia analiz
+- tryb CLI (bez GUI)
+- obsługa symboli IUPAC (np. N, R, Y)
 
 ---
 
-## 🚀 Instalacja i uruchomienie
+# 🧠 Funkcjonalności biologiczne
 
-### 1. Klonowanie repozytorium
+### 🔬 Obsługa motywów IUPAC
+Motywy mogą zawierać symbole:
+A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N
 
-```bash
-git clone https://github.com/TWOJE_NAZWA_REPO.git
-cd dna_motif_analyzer_project
-```
-### 2. Utworzenie środowiska wirtualnego
-```
-python -m venv venv
-```
-### 3. Aktywacja środowiska
+Np.:
+- ATN → AT + dowolna baza
+- AR → A + (A lub G)
 
-Windows:
-```
-venv\Scripts\activate
-```
-Linux / macOS:
-```
-source venv/bin/activate
-```
-### 4. Instalacja zależności
-```
-pip install -r requirements.txt
-```
-### 5. Uruchomienie aplikacji GUI
-```
-python main.py
-```
-##### 🧪 Uruchamianie testów
-```
-pytest
-```
-#### 💻 Tryb CLI (bez GUI)
+---
 
-Aplikację można uruchomić również w trybie tekstowym:
-```
-python main.py --file data/example_sequence.fasta --motifs ATG,TATA --segment 10
-```
-Parametry:
+### 📊 Segmentacja sekwencji
 
---file – ścieżka do pliku (TXT/FASTA),
+Motywy przypisywane są do segmentów na podstawie:
+- pozycji startowej (domyślnie)
+- lub pełnego zawarcia w segmencie
 
---motifs – motywy oddzielone przecinkami,
+---
 
---segment – długość segmentu (opcjonalnie, domyślnie 10).
+### ⚠️ Uwagi
+- motywy nakładające się są wykrywane poprawnie
+- sekwencje mogą zawierać symbole niejednoznaczne (IUPAC)
+- analiza działa na dopasowaniu regex (motyw → sekwencja)
 
-#### 📊 Przykładowe użycie GUI
-Wybierz plik z sekwencją (Choose first sequence file)
-lub pobierz sekwencję z NCBI
+---
 
-Wpisz motywy, np.:
+# 🧱 Struktura projektu
 
-ATG, TATA, CGCG
-Ustaw długość segmentu (np. 10)
-Kliknij Analyze
-Przeglądaj wyniki:
-podsumowanie tekstowe,
-tabelę wyników,
-wykresy,
-interaktywną wizualizację.
-🧬 Przykładowe accession ID (NCBI)
-
-Możesz użyć:
-
-NM_000518 – ludzka hemoglobina
-NC_012920 – mitochondrialne DNA człowieka
-📸 Zrzuty ekranu
-
-(Dodaj po wykonaniu screenów)
-
-![Main window](screenshots/main_window.png)
-![Results](screenshots/results.png)
-![Plots](screenshots/plots.png)
-
-👉 Utwórz folder:
-
-screenshots/
-🧠 Funkcjonalności projektu
-Wariant minimalny
-wczytywanie sekwencji z pliku FASTA/TXT,
-wyszukiwanie motywów i ich pozycji,
-zliczanie liczby wystąpień,
-segmentacja sekwencji,
-analiza statystyczna (Pandas),
-wykres słupkowy rozmieszczenia motywów,
-GUI do wyboru pliku i motywu,
-eksport wyników do CSV.
-Wariant rozszerzony
-pobieranie sekwencji z NCBI (Biopython),
-obsługa wielu motywów,
-porównanie dwóch sekwencji,
-interaktywna wizualizacja (Plotly),
-eksport PDF i JSON (pełna sesja),
-tryb CLI,
-obsługa symboli IUPAC (np. N, R, Y),
-dodatkowe statystyki:
-GC-content,
-AT-content,
-gęstość motywów,
-tabela wyników (Treeview),
-historia analiz,
-ulepszone GUI (ttk, układ kolumnowy, status bar).
-🧱 Struktura projektu
 dna_motif_analyzer_project
 │
 ├── main.py
@@ -149,13 +90,81 @@ dna_motif_analyzer_project
 │   └── example_sequence.fasta
 │
 ├── results
+│   ├── interactive_motif_positions.html
 │   └── .gitkeep
 │
 └── tests
     ├── test_io_utils.py
     ├── test_motif_analysis.py
-    └── test_validation_utils.py
-## Technologie
+    ├── test_validation_utils.py
+    ├── test_export_utils.py
+    └── test_ncbi_utils.py
+
+---
+
+# 🚀 Instalacja i uruchomienie
+
+## 1. Klonowanie repozytorium
+```
+git clone https://github.com/mikalg94.git
+cd dna_motif_analyzer_project
+```
+## 2. Środowisko wirtualne
+```
+python -m venv venv
+```
+Windows:
+```
+venv\Scripts\activate
+```
+Linux / macOS:
+```
+source venv/bin/activate
+```
+## 3. Instalacja zależności
+```
+pip install -r requirements.txt
+```
+---
+
+# ▶️ Uruchomienie aplikacji
+
+## GUI
+```
+python main.py
+```
+## CLI
+```
+python main.py --file data/example_sequence.fasta --motifs ATG,TATA --segment 10
+```
+---
+
+# 🧪 Testy
+```
+pytest
+```
+---
+
+# 📊 Wizualizacje
+
+Aplikacja oferuje:
+- wykres rozmieszczenia motywów
+- wykres pozycji motywów
+- wykres GC-content
+- porównanie GC między sekwencjami
+- interaktywny wykres HTML (Plotly)
+
+---
+
+# 📦 Eksport danych
+
+- CSV – tabela wyników
+- JSON – cała sesja analizy
+- PDF – raport z wykresami
+
+---
+
+# ⚙️ Technologie
 
 - Python
 - Tkinter / ttk
@@ -166,25 +175,9 @@ dna_motif_analyzer_project
 - Biopython
 - Pytest
 
-## Uwagi dotyczące analizy segmentowej
+---
 
-Aplikacja obsługuje dwa tryby przypisywania motywów do segmentów:
+# 🧑‍💻 Autor
+## Michał Grzybała
 
-- `start` – motyw przypisywany jest do segmentu na podstawie pozycji startowej,
-- `full` – motyw liczony jest tylko wtedy, gdy cały mieści się w granicach segmentu.
-
-Opcję tę można wybrać zarówno w GUI, jak i w trybie CLI.
-
-## Użycie NumPy w projekcie
-
-Biblioteka NumPy została wykorzystana do:
-
-- obliczania GC-content i AT-content,
-- zliczania nieznanych nukleotydów `N`,
-- obliczania średniej liczby motywów na segment,
-- obsługi wybranych obliczeń segmentowych.
-
-## Tryb CLI
-
-```bash
-python main.py --file data/example_sequence.fasta --motifs ATG,TATA --segment 10 --mode start
+Projekt wykonany w ramach projektu zaliczeniowego.
