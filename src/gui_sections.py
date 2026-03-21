@@ -19,7 +19,7 @@ def build_main_layout(app):
         ),
     )
 
-    app.main_canvas.create_window((0, 0), window=app.scrollable_frame, anchor="nw")
+    app.main_canvas.create_window((0, 0), window=app.scrollable_frame, anchor="n")
     app.main_canvas.configure(yscrollcommand=app.main_scrollbar.set)
 
     app.main_canvas.pack(side="left", fill="both", expand=True)
@@ -28,15 +28,20 @@ def build_main_layout(app):
     app.root.grid_rowconfigure(0, weight=1)
     app.root.grid_columnconfigure(0, weight=1)
 
-    app.content_frame = ttk.Frame(app.scrollable_frame)
-    app.content_frame.pack(fill="both", expand=True, padx=15, pady=5)
+    app.outer_content_frame = ttk.Frame(app.scrollable_frame)
+    app.outer_content_frame.pack(fill="both", expand=True, padx=15, pady=5)
+
+    app.content_frame = ttk.Frame(app.outer_content_frame)
+    app.content_frame.pack(anchor="center", fill="x", expand=True)
+
+    app.content_frame.grid_columnconfigure(0, weight=1, uniform="columns")
+    app.content_frame.grid_columnconfigure(1, weight=1, uniform="columns")
 
     app.left_column = ttk.Frame(app.content_frame)
-    app.left_column.pack(side="left", fill="both", expand=True, padx=(0, 8))
+    app.left_column.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
 
     app.right_column = ttk.Frame(app.content_frame)
-    app.right_column.pack(side="left", fill="both", expand=True, padx=(8, 0))
-
+    app.right_column.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
 
 def build_title(app):
     app.title_label = ttk.Label(
