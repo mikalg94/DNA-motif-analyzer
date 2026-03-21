@@ -1,4 +1,5 @@
 import os
+import threading
 import webbrowser
 from datetime import datetime
 
@@ -81,6 +82,71 @@ class App:
             self.sequence_2 = sequence
             self.file_label_2.config(text=source_label)
 
+    def _set_ncbi_buttons_state(self, state):
+        self.fetch_button.config(state=state)
+        self.fetch_button_2.config(state=state)
+        self.example_button.config(state=state)
+        self.example_button_2.config(state=state)
+
+    def _handle_ncbi_success(self, target, accession_id, sequence, description=None, is_example=False):
+        if is_example:
+            self._set_sequence_data(target, sequence, f"Loaded example from NCBI: {accession_id}")
+            messagebox.showinfo(
+                "Success",
+                f"Example sequence loaded successfully.\n"
+                f"Description: {description}\n"
+                f"Accession: {accession_id}\n"
+                f"Length: {len(sequence)}"
+            )
+        else:
+            self._set_sequence_data(target, sequence, f"Loaded from NCBI: {accession_id}")
+
+            if target == 1:
+                success_message = f"First sequence downloaded from NCBI.\nLength: {len(sequence)}"
+            else:
+                success_message = f"Second sequence downloaded from NCBI.\nLength: {len(sequence)}"
+
+            messagebox.showinfo("Success", success_message)
+
+        self._set_ncbi_buttons_state("normal")
+
+    def _handle_ncbi_error(self, error_message):
+        self._set_ncbi_buttons_state("normal")
+        messagebox.showerror("Error", error_message)
+
+    def _fetch_from_ncbi_worker(self, target, accession_id, email):
+        try:
+            sequence = fetch_sequence_from_ncbi(accession_id, email)
+            self.root.after(
+                0,
+                lambda: self._handle_ncbi_success(target, accession_id, sequence)
+            )
+        except Exception as e:
+            self.root.after(
+                0,
+                lambda: self._handle_ncbi_error(f"Failed to download sequence: {e}")
+            )
+
+    def _load_example_ncbi_worker(self, target, accession_id, description):
+        try:
+            email = "test@test.com"
+            sequence = fetch_sequence_from_ncbi(accession_id, email)
+            self.root.after(
+                0,
+                lambda: self._handle_ncbi_success(
+                    target,
+                    accession_id,
+                    sequence,
+                    description=description,
+                    is_example=True
+                )
+            )
+        except Exception as e:
+            self.root.after(
+                0,
+                lambda: self._handle_ncbi_error(f"Failed to load example: {e}")
+            )
+
     def choose_file(self, target):
         selected_path = filedialog.askopenfilename(
             filetypes=[("Sequence files", "*.txt *.fasta *.fa"), ("All files", "*.*")]
@@ -119,35 +185,24 @@ class App:
             messagebox.showerror("Error", "Please enter accession ID and email.")
             return
 
-        try:
-            sequence = fetch_sequence_from_ncbi(accession_id, email)
-            self._set_sequence_data(target, sequence, f"Loaded from NCBI: {accession_id}")
+        self._set_ncbi_buttons_state("disabled")
 
-            if target == 1:
-                success_message = f"First sequence downloaded from NCBI.\nLength: {len(sequence)}"
-            else:
-                success_message = f"Second sequence downloaded from NCBI.\nLength: {len(sequence)}"
-
-            messagebox.showinfo("Success", success_message)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to download sequence: {e}")
+        thread = threading.Thread(
+            target=self._fetch_from_ncbi_worker,
+            args=(target, accession_id, email),
+            daemon=True
+        )
+        thread.start()
 
     def load_example_ncbi(self, target, accession_id, description):
-        try:
-            email = "test@test.com"
-            sequence = fetch_sequence_from_ncbi(accession_id, email)
-            self._set_sequence_data(target, sequence, f"Loaded example from NCBI: {accession_id}")
+        self._set_ncbi_buttons_state("disabled")
 
-            messagebox.showinfo(
-                "Success",
-                f"Example sequence loaded successfully.\n"
-                f"Description: {description}\n"
-                f"Accession: {accession_id}\n"
-                f"Length: {len(sequence)}"
-            )
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load example: {e}")
+        thread = threading.Thread(
+            target=self._load_example_ncbi_worker,
+            args=(target, accession_id, description),
+            daemon=True
+        )
+        thread.start()
 
     def _get_motifs_and_segment_length(self):
         motifs_text = self.motif_entry.get().strip()
