@@ -12,6 +12,7 @@ from src.export_utils import (
     create_motif_distribution_figure,
     create_motif_positions_figure,
     create_multiple_motifs_summary_figure,
+    create_gc_content_figure,
     export_report_to_pdf,
     export_results_to_csv,
     interactive_motif_positions,
@@ -311,6 +312,16 @@ class App:
 
         text_widget.insert("1.0", content)
         text_widget.config(state="disabled")
+
+    def show_gc_plot(self):
+        if not self.last_statistics_df is None:
+            try:
+                fig = create_gc_content_figure(self.last_statistics_df)
+                self._show_figure_window("GC Content Plot", fig)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to generate GC plot: {e}")
+        else:
+            messagebox.showerror("Error", "No analysis results available.")
 
     def _format_analysis_results(self, motifs, segment_length, results):
         output = [

@@ -60,6 +60,18 @@ def create_multiple_motifs_summary_figure(results):
     fig.tight_layout()
     return fig
 
+def create_gc_content_figure(df):
+    fig = Figure(figsize=(8, 5))
+    ax = fig.add_subplot(111)
+
+    ax.plot(df["segment_id"], df["gc_content"], marker="o")
+
+    ax.set_xlabel("Segment")
+    ax.set_ylabel("GC content (%)")
+    ax.set_title("GC-content distribution across sequence")
+
+    fig.tight_layout()
+    return fig
 
 # Functions below are used for saving plots to files
 # and for optional direct display outside the Tkinter windows.

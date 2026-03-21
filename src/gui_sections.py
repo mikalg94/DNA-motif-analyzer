@@ -220,6 +220,14 @@ def build_actions_frame(app):
     )
     app.show_plot_button.pack(pady=3)
 
+    app.show_gc_button = tk.Button(
+        app.actions_frame,
+        text="Show GC Content Plot",
+        command=app.show_gc_plot,
+        width=25
+    )
+    app.show_gc_button.pack(pady=3)
+
     app.show_multi_plot_button = tk.Button(
         app.actions_frame,
         text="Show Multi-Motif Summary",
