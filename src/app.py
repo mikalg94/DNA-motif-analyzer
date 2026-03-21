@@ -328,6 +328,39 @@ class App:
 
         return "\n".join(output)
 
+    def _save_analysis_history(self, motifs, segment_length, results):
+        history_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "operation": "analysis",
+            "sequence_1_length": len(self.sequence),
+            "sequence_2_length": "",
+            "motifs": ", ".join(motifs),
+            "segment_length": segment_length,
+            "details": "; ".join(
+                [f"{result['motif']}={result['count']}" for result in results]
+            )
+        }
+        save_analysis_history(history_entry)
+
+    def _save_comparison_history(self, motifs):
+        comparison_details = []
+        for _, row in self.last_comparison_df.iterrows():
+            comparison_details.append(
+                f"{row['motif']}: seq1={row['sequence_1_count']}, "
+                f"seq2={row['sequence_2_count']}"
+            )
+
+        history_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "operation": "comparison",
+            "sequence_1_length": len(self.sequence),
+            "sequence_2_length": len(self.sequence_2),
+            "motifs": ", ".join(motifs),
+            "segment_length": "",
+            "details": "; ".join(comparison_details)
+        }
+        save_analysis_history(history_entry)
+
     def run_analysis(self):
         if not self.sequence:
             messagebox.showerror("Error", "Please load a sequence from file or NCBI.")
@@ -356,18 +389,7 @@ class App:
 
         final_text = self._format_analysis_results(motifs, segment_length, results)
 
-        history_entry = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "operation": "analysis",
-            "sequence_1_length": len(self.sequence),
-            "sequence_2_length": "",
-            "motifs": ", ".join(motifs),
-            "segment_length": segment_length,
-            "details": "; ".join(
-                [f"{result['motif']}={result['count']}" for result in results]
-            )
-        }
-        save_analysis_history(history_entry)
+        self._save_analysis_history(motifs, segment_length, results)
 
         self.result_text.delete("1.0", tk.END)
         self.result_text.insert(tk.END, final_text)
@@ -398,23 +420,7 @@ class App:
 
             final_text = self._format_comparison_results(motifs)
 
-            comparison_details = []
-            for _, row in self.last_comparison_df.iterrows():
-                comparison_details.append(
-                    f"{row['motif']}: seq1={row['sequence_1_count']}, "
-                    f"seq2={row['sequence_2_count']}"
-                )
-
-            history_entry = {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "operation": "comparison",
-                "sequence_1_length": len(self.sequence),
-                "sequence_2_length": len(self.sequence_2),
-                "motifs": ", ".join(motifs),
-                "segment_length": "",
-                "details": "; ".join(comparison_details)
-            }
-            save_analysis_history(history_entry)
+            self._save_comparison_history(motifs)
 
             self.result_text.delete("1.0", tk.END)
             self.result_text.insert(tk.END, final_text)
