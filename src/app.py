@@ -361,17 +361,12 @@ class App:
         }
         save_analysis_history(history_entry)
 
-    def run_analysis(self):
-        if not self.sequence:
-            messagebox.showerror("Error", "Please load a sequence from file or NCBI.")
-            return
+    def _display_results(self, window_title, content):
+        self.result_text.delete("1.0", tk.END)
+        self.result_text.insert(tk.END, content)
+        self._show_results_window(window_title, content)
 
-        try:
-            motifs, segment_length = self._get_motifs_and_segment_length()
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-            return
-
+    def _prepare_analysis_results(self, motifs, segment_length):
         results = analyze_multiple_motifs(self.sequence, motifs)
 
         self.last_results = results
@@ -387,14 +382,29 @@ class App:
             segment_length
         )
 
-        final_text = self._format_analysis_results(motifs, segment_length, results)
+        return results
 
-        self._save_analysis_history(motifs, segment_length, results)
+    def _prepare_comparison_results(self, motifs):
+        self.last_comparison_df = compare_sequences(
+            self.sequence,
+            self.sequence_2,
+            motifs
+        )
+        return self.last_comparison_df
 
-        self.result_text.delete("1.0", tk.END)
-        self.result_text.insert(tk.END, final_text)
+    def run_analysis(self):
+        if not self.sequence:
+            messagebox.showerror("Error", "Please load a sequence from file or NCBI.")
+            return
 
-        self._show_results_window("Analysis Results", final_text)
+        try:
+            motifs, segment_length = self._get_motifs_and_segment_length()
+            results = self._prepare_analysis_results(motifs, segment_length)
+            final_text = self._format_analysis_results(motifs, segment_length, results)
+            self._save_analysis_history(motifs, segment_length, results)
+            self._display_results("Analysis Results", final_text)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     def run_comparison(self):
         if not self.sequence:
@@ -407,26 +417,10 @@ class App:
 
         try:
             motifs, _ = self._get_motifs_and_segment_length()
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-            return
-
-        try:
-            self.last_comparison_df = compare_sequences(
-                self.sequence,
-                self.sequence_2,
-                motifs
-            )
-
+            self._prepare_comparison_results(motifs)
             final_text = self._format_comparison_results(motifs)
-
             self._save_comparison_history(motifs)
-
-            self.result_text.delete("1.0", tk.END)
-            self.result_text.insert(tk.END, final_text)
-
-            self._show_results_window("Comparison Results", final_text)
-
+            self._display_results("Comparison Results", final_text)
         except Exception as e:
             messagebox.showerror("Error", f"Comparison failed: {e}")
 
