@@ -256,17 +256,7 @@ class App:
         if not motif:
             raise ValueError("Please select a motif.")
 
-        segment_text = self.segment_entry.get().strip()
-        if not segment_text:
-            raise ValueError("Segment length cannot be empty.")
-
-        try:
-            segment_length = int(segment_text)
-        except ValueError:
-            raise ValueError("Segment length must be an integer.")
-
-        if segment_length <= 0:
-            raise ValueError("Segment length must be a positive integer.")
+        segment_length = self._get_segment_length()
 
         self.last_selected_motif = motif
         self.last_statistics_df = build_statistics_dataframe(
@@ -274,6 +264,7 @@ class App:
             motif,
             segment_length
         )
+
     def _prepare_selected_motif_statistics(self):
         if not self.last_results or not self.sequence:
             raise ValueError("No analysis results available.")
