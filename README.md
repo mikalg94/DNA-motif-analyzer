@@ -42,6 +42,11 @@ Aplikacja umożliwia:
 - historia analiz i porównań zapisywana do pliku CSV.
 - wykresy Matplotlib są wyświetlane w osobnych oknach Tkinter z paskiem narzędzi,
 - interaktywny wykres Plotly jest zapisywany do pliku HTML i otwierany z poziomu osobnego okna aplikacji.
+- obsługa motywów z symbolami IUPAC, np. N, R, Y,
+
+Przykład:
+- motif `ATN` dopasuje `ATA`, `ATC`, `ATG`, `ATT`
+- motif `ARY` dopasuje wzorce zgodne z A-(A/G)-(C/T)
 
 ## Uwagi końcowe
 

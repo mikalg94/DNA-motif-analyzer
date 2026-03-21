@@ -2,6 +2,7 @@ import re
 
 
 DNA_PATTERN = re.compile(r"^[ATCGN]+$", re.IGNORECASE)
+MOTIF_PATTERN = re.compile(r"^[ACGTRYSWKMBDHVN]+$", re.IGNORECASE)
 
 
 def normalize_sequence(sequence: str) -> str:
@@ -20,8 +21,11 @@ def validate_motif(motif: str) -> None:
     if not motif:
         raise ValueError("Motif cannot be empty.")
 
-    if not DNA_PATTERN.fullmatch(motif):
-        raise ValueError("Motif contains invalid characters. Allowed: A, T, C, G, N.")
+    if not MOTIF_PATTERN.fullmatch(motif):
+        raise ValueError(
+            "Motif contains invalid characters. Allowed DNA/IUPAC symbols: "
+            "A, T, C, G, R, Y, S, W, K, M, B, D, H, V, N."
+        )
 
 
 def validate_motifs_against_sequence(motifs: list[str], sequence: str) -> None:

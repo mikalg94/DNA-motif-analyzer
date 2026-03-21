@@ -62,3 +62,11 @@ def test_get_sequence_warning_for_many_unknown_bases():
 def test_get_sequence_warning_for_clean_sequence():
     warning = get_sequence_warning("ATGCGTATGC")
     assert warning is None
+
+def test_validate_motif_iupac_valid():
+    validate_motif("ATRYN")
+
+
+def test_validate_motif_iupac_invalid():
+    with pytest.raises(ValueError):
+        validate_motif("ATZ")

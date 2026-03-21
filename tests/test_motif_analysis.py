@@ -63,3 +63,20 @@ def test_compare_sequences():
     assert "sequence_2_per_1000_nt" in df.columns
     assert "count_difference" in df.columns
     assert len(df) == 2
+
+def test_find_motif_positions_with_iupac_n():
+    sequence = "ATGATCATAATT"
+    motif = "ATN"
+    assert find_motif_positions(sequence, motif) == [0, 3, 6]
+
+
+def test_find_motif_positions_with_iupac_r():
+    sequence = "AAAGACAT"
+    motif = "AR"
+    assert find_motif_positions(sequence, motif) == [0, 1, 3, 5]
+
+
+def test_count_motif_occurrences_with_iupac():
+    sequence = "ATGATCATA"
+    motif = "ATN"
+    assert count_motif_occurrences(sequence, motif) == 3

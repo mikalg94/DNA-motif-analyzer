@@ -1,14 +1,39 @@
 import pandas as pd
+import re
 
+IUPAC_MAP = {
+    "A": "A",
+    "T": "T",
+    "C": "C",
+    "G": "G",
+    "R": "[AG]",
+    "Y": "[CT]",
+    "S": "[GC]",
+    "W": "[AT]",
+    "K": "[GT]",
+    "M": "[AC]",
+    "B": "[CGT]",
+    "D": "[AGT]",
+    "H": "[ACT]",
+    "V": "[ACG]",
+    "N": "[ATCGN]",
+}
+
+
+def motif_to_regex(motif):
+    motif = motif.upper()
+    return "".join(IUPAC_MAP.get(char, re.escape(char)) for char in motif)
 
 def find_motif_positions(sequence, motif):
     positions = []
     sequence = sequence.upper()
     motif = motif.upper()
-    motif_length = len(motif)
 
-    for i in range(len(sequence) - motif_length + 1):
-        if sequence[i:i + motif_length] == motif:
+    pattern = motif_to_regex(motif)
+
+    for i in range(len(sequence) - len(motif) + 1):
+        fragment = sequence[i:i + len(motif)]
+        if re.fullmatch(pattern, fragment):
             positions.append(i)
 
     return positions
