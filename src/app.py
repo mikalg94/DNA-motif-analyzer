@@ -26,6 +26,16 @@ from src.motif_analysis import (
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import normalize_motifs
 
+from src.gui_sections import (
+    build_main_layout,
+    build_title,
+    build_files_frame,
+    build_ncbi_frame,
+    build_analysis_frame,
+    build_actions_frame,
+    build_results_frame,
+)
+
 
 class App:
     def __init__(self, root):
@@ -44,289 +54,14 @@ class App:
         self.last_selected_motif = None
         self.last_comparison_df = None
 
-        self._build_main_layout()
-        self._build_title()
-        self._build_files_frame()
-        self._build_ncbi_frame()
-        self._build_analysis_frame()
-        self._build_actions_frame()
-        self._build_results_frame()
-
-    def _build_main_layout(self):
-        self.main_canvas = tk.Canvas(self.root)
-        self.main_scrollbar = tk.Scrollbar(
-            self.root, orient="vertical", command=self.main_canvas.yview
-        )
-
-        self.scrollable_frame = tk.Frame(self.main_canvas)
-
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.main_canvas.configure(
-                scrollregion=self.main_canvas.bbox("all")
-            ),
-        )
-
-        self.main_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.main_canvas.configure(yscrollcommand=self.main_scrollbar.set)
-
-        self.main_canvas.pack(side="left", fill="both", expand=True)
-        self.main_scrollbar.pack(side="right", fill="y")
-
-        self.root.grid_rowconfigure(0, weight=1)
-        self.root.grid_columnconfigure(0, weight=1)
-
-    def _build_title(self):
-        self.title_label = tk.Label(
-            self.scrollable_frame,
-            text="DNA Motif Analyzer",
-            font=("Arial", 18, "bold")
-        )
-        self.title_label.pack(pady=10)
-
-    def _build_files_frame(self):
-        self.files_frame = tk.LabelFrame(
-            self.scrollable_frame,
-            text="Sequence files",
-            padx=10,
-            pady=10
-        )
-        self.files_frame.pack(fill="x", padx=15, pady=5)
-
-        self.file_button = tk.Button(
-            self.files_frame,
-            text="Choose first sequence file",
-            command=lambda: self.choose_file(1),
-            width=25
-        )
-        self.file_button.pack(pady=3)
-
-        self.file_label = tk.Label(self.files_frame, text="No first file selected")
-        self.file_label.pack(pady=3)
-
-        self.file_button_2 = tk.Button(
-            self.files_frame,
-            text="Choose second sequence file",
-            command=lambda: self.choose_file(2),
-            width=25
-        )
-        self.file_button_2.pack(pady=3)
-
-        self.file_label_2 = tk.Label(self.files_frame, text="No second file selected")
-        self.file_label_2.pack(pady=3)
-
-    def _build_ncbi_frame(self):
-        self.ncbi_frame = tk.LabelFrame(
-            self.scrollable_frame,
-            text="NCBI download",
-            padx=10,
-            pady=10
-        )
-        self.ncbi_frame.pack(fill="x", padx=15, pady=5)
-
-        self.ncbi_label = tk.Label(self.ncbi_frame, text="First NCBI accession ID:")
-        self.ncbi_label.pack(pady=3)
-
-        self.ncbi_entry = tk.Entry(self.ncbi_frame, width=35)
-        self.ncbi_entry.pack(pady=3)
-
-        self.ncbi_label_2 = tk.Label(self.ncbi_frame, text="Second NCBI accession ID:")
-        self.ncbi_label_2.pack(pady=3)
-
-        self.ncbi_entry_2 = tk.Entry(self.ncbi_frame, width=35)
-        self.ncbi_entry_2.pack(pady=3)
-
-        self.email_label = tk.Label(self.ncbi_frame, text="Email for NCBI:")
-        self.email_label.pack(pady=3)
-
-        self.email_entry = tk.Entry(self.ncbi_frame, width=35)
-        self.email_entry.pack(pady=3)
-
-        self.fetch_button = tk.Button(
-            self.ncbi_frame,
-            text="Fetch first from NCBI",
-            command=lambda: self.fetch_from_ncbi(1),
-            width=25
-        )
-        self.fetch_button.pack(pady=3)
-
-        self.fetch_button_2 = tk.Button(
-            self.ncbi_frame,
-            text="Fetch second from NCBI",
-            command=lambda: self.fetch_from_ncbi(2),
-            width=25
-        )
-        self.fetch_button_2.pack(pady=3)
-
-        self.example_button = tk.Button(
-            self.ncbi_frame,
-            text="Load Example (Human Hemoglobin)",
-            command=lambda: self.load_example_ncbi(
-                target=1,
-                accession_id="NM_000518",
-                description="Human Hemoglobin"
-            ),
-            width=30
-        )
-        self.example_button.pack(pady=3)
-
-        self.example_button_2 = tk.Button(
-            self.ncbi_frame,
-            text="Load Example (Mitochondrial DNA)",
-            command=lambda: self.load_example_ncbi(
-                target=2,
-                accession_id="NC_012920",
-                description="Mitochondrial DNA"
-            ),
-            width=30
-        )
-        self.example_button_2.pack(pady=3)
-
-    def _build_analysis_frame(self):
-        self.analysis_frame = tk.LabelFrame(
-            self.scrollable_frame,
-            text="Analysis settings",
-            padx=10,
-            pady=10
-        )
-        self.analysis_frame.pack(fill="x", padx=15, pady=5)
-
-        self.motif_label = tk.Label(
-            self.analysis_frame,
-            text="Enter motifs separated by commas:"
-        )
-        self.motif_label.pack(pady=3)
-
-        self.motif_entry = tk.Entry(self.analysis_frame, width=45)
-        self.motif_entry.pack(pady=3)
-
-        self.selected_motif_label = tk.Label(
-            self.analysis_frame,
-            text="Select motif for plot/PDF:"
-        )
-        self.selected_motif_label.pack(pady=3)
-
-        self.selected_motif_var = tk.StringVar()
-        self.selected_motif_combobox = ttk.Combobox(
-            self.analysis_frame,
-            textvariable=self.selected_motif_var,
-            state="readonly",
-            width=25
-        )
-        self.selected_motif_combobox.pack(pady=3)
-
-        self.segment_label = tk.Label(self.analysis_frame, text="Segment length:")
-        self.segment_label.pack(pady=3)
-
-        self.segment_entry = tk.Entry(self.analysis_frame, width=10)
-        self.segment_entry.insert(0, "10")
-        self.segment_entry.pack(pady=3)
-
-    def _build_actions_frame(self):
-        self.actions_frame = tk.LabelFrame(
-            self.scrollable_frame,
-            text="Actions",
-            padx=10,
-            pady=10
-        )
-        self.actions_frame.pack(fill="x", padx=15, pady=5)
-
-        self.analyze_button = tk.Button(
-            self.actions_frame,
-            text="Analyze",
-            command=self.run_analysis,
-            width=25
-        )
-        self.analyze_button.pack(pady=3)
-
-        self.compare_button = tk.Button(
-            self.actions_frame,
-            text="Compare Sequences",
-            command=self.run_comparison,
-            width=25
-        )
-        self.compare_button.pack(pady=3)
-
-        self.export_csv_button = tk.Button(
-            self.actions_frame,
-            text="Export CSV",
-            command=self.export_csv,
-            width=25
-        )
-        self.export_csv_button.pack(pady=3)
-
-        self.show_plot_button = tk.Button(
-            self.actions_frame,
-            text="Show Distribution Plot",
-            command=self.show_plot,
-            width=25
-        )
-        self.show_plot_button.pack(pady=3)
-
-        self.show_multi_plot_button = tk.Button(
-            self.actions_frame,
-            text="Show Multi-Motif Summary",
-            command=self.show_multi_motif_plot,
-            width=25
-        )
-        self.show_multi_plot_button.pack(pady=3)
-
-        self.show_positions_button = tk.Button(
-            self.actions_frame,
-            text="Show Motif Positions",
-            command=self.show_positions_plot,
-            width=25
-        )
-        self.show_positions_button.pack(pady=3)
-
-        self.show_interactive_button = tk.Button(
-            self.actions_frame,
-            text="Open Interactive Motif Plot",
-            command=self.show_interactive_positions_plot,
-            width=25
-        )
-        self.show_interactive_button.pack(pady=3)
-
-        self.save_plot_button = tk.Button(
-            self.actions_frame,
-            text="Save Plot as PNG",
-            command=self.save_plot,
-            width=25
-        )
-        self.save_plot_button.pack(pady=3)
-
-        self.export_pdf_button = tk.Button(
-            self.actions_frame,
-            text="Export PDF",
-            command=self.export_pdf,
-            width=25
-        )
-        self.export_pdf_button.pack(pady=3)
-
-        self.show_history_button = tk.Button(
-            self.actions_frame,
-            text="Show Analysis History",
-            command=self.show_analysis_history,
-            width=25
-        )
-        self.show_history_button.pack(pady=3)
-
-    def _build_results_frame(self):
-        self.result_frame = tk.Frame(self.scrollable_frame)
-        self.result_frame.pack(fill="both", expand=True, padx=15, pady=10)
-
-        self.result_scrollbar = tk.Scrollbar(self.result_frame)
-        self.result_scrollbar.pack(side="right", fill="y")
-
-        self.result_text = tk.Text(
-            self.result_frame,
-            height=8,
-            width=110,
-            yscrollcommand=self.result_scrollbar.set
-        )
-        self.result_text.pack(side="left", fill="both", expand=True)
-
-        self.result_scrollbar.config(command=self.result_text.yview)
+        # Budowa GUI (teraz w osobnym module)
+        build_main_layout(self)
+        build_title(self)
+        build_files_frame(self)
+        build_ncbi_frame(self)
+        build_analysis_frame(self)
+        build_actions_frame(self)
+        build_results_frame(self)
 
     def _load_sequence_from_path(self, path):
         lowered = path.lower()
