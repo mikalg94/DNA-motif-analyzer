@@ -3,6 +3,13 @@ import re
 import numpy as np
 import pandas as pd
 
+# Mapping symboli IUPAC używanych w motywie do odpowiednich klas regex.
+# Uwaga:
+# - symbole IUPAC w motywie są interpretowane aktywnie,
+# - symbole niejednoznaczne w sekwencji są traktowane dosłownie.
+# Oznacza to, że motyw "ATN" dopasuje "ATA", "ATC", "ATG", "ATT", "ATN",
+# ale sekwencja zawierająca np. "R" lub "Y" nie jest rozwijana do wielu wariantów.
+# To uproszczenie jest celowe i zostało opisane również w README.
 IUPAC_MAP = {
     "A": "A",
     "T": "T",
