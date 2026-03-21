@@ -142,3 +142,47 @@ def calculate_gc_content_per_segment(sequence, segment_length=10):
         gc_values.append(round(gc_percent, 3))
 
     return gc_values
+
+def calculate_at_content(sequence):
+    if not sequence:
+        return 0.0
+
+    sequence = sequence.upper()
+    at_count = sequence.count("A") + sequence.count("T")
+    return round((at_count / len(sequence)) * 100, 3)
+
+
+def count_unknown_bases(sequence):
+    return sequence.upper().count("N")
+
+
+def calculate_motif_density_per_1000_nt(sequence, motif):
+    sequence_length = len(sequence)
+    if sequence_length == 0:
+        return 0.0
+
+    count = count_motif_occurrences(sequence, motif)
+    return round((count / sequence_length) * 1000, 3)
+
+
+def calculate_average_motifs_per_segment(sequence, motif, segment_length=10):
+    counts = count_motif_in_segments(sequence, motif, segment_length)
+    if not counts:
+        return 0.0
+
+    return round(sum(counts) / len(counts), 3)
+
+
+def get_segment_with_max_motifs(sequence, motif, segment_length=10):
+    df = build_statistics_dataframe(sequence, motif, segment_length)
+
+    if df.empty:
+        return None
+
+    max_row = df.loc[df["motif_count"].idxmax()]
+    return {
+        "segment_id": int(max_row["segment_id"]),
+        "start": int(max_row["start"]),
+        "end": int(max_row["end"]),
+        "motif_count": int(max_row["motif_count"]),
+    }

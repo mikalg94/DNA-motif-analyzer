@@ -35,8 +35,13 @@ from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
 from src.motif_analysis import (
     analyze_multiple_motifs,
     build_statistics_dataframe,
-    compare_sequences,
+    calculate_at_content,
+    calculate_average_motifs_per_segment,
     calculate_gc_content,
+    calculate_motif_density_per_1000_nt,
+    compare_sequences,
+    count_unknown_bases,
+    get_segment_with_max_motifs,
 )
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import (
@@ -448,13 +453,57 @@ class App:
             self._set_status("Failed to generate overlay plot")
             messagebox.showerror("Error", f"Failed to generate overlay plot: {e}")
 
+    def _build_extended_sequence_statistics(self, motif, segment_length):
+        max_segment = get_segment_with_max_motifs(
+            self.sequence,
+            motif,
+            segment_length
+        )
+
+        if max_segment is None:
+            max_segment_text = "No segment data available"
+        else:
+            max_segment_text = (
+                f"Segment {max_segment['segment_id']} "
+                f"({max_segment['start']}-{max_segment['end']}), "
+                f"count={max_segment['motif_count']}"
+            )
+
+        return {
+            "gc_content": calculate_gc_content(self.sequence),
+            "at_content": calculate_at_content(self.sequence),
+            "unknown_bases": count_unknown_bases(self.sequence),
+            "motif_density_per_1000_nt": calculate_motif_density_per_1000_nt(
+                self.sequence,
+                motif
+            ),
+            "average_motifs_per_segment": calculate_average_motifs_per_segment(
+                self.sequence,
+                motif,
+                segment_length
+            ),
+            "max_segment_text": max_segment_text,
+        }
+
     def _format_analysis_results(self, motifs, segment_length, results):
+        selected_motif = self.last_selected_motif or motifs[0]
+        extended_stats = self._build_extended_sequence_statistics(
+            selected_motif,
+            segment_length
+        )
+
         output = [
             "ANALYSIS RESULTS\n",
             f"Sequence length: {len(self.sequence)}",
-            f"GC content: {calculate_gc_content(self.sequence)}%",
+            f"GC content: {extended_stats['gc_content']}%",
+            f"AT content: {extended_stats['at_content']}%",
+            f"Unknown bases (N): {extended_stats['unknown_bases']}",
             f"Recognized motifs: {', '.join(motifs)}",
-            f"Segment length: {segment_length}\n",
+            f"Segment length: {segment_length}",
+            f"Selected motif for detailed statistics: {selected_motif}",
+            f"Motif density per 1000 nt: {extended_stats['motif_density_per_1000_nt']}",
+            f"Average motifs per segment: {extended_stats['average_motifs_per_segment']}",
+            f"Segment with highest count: {extended_stats['max_segment_text']}\n",
         ]
 
         for result in results:
