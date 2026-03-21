@@ -38,6 +38,13 @@ def test_count_motif_in_segments():
     assert counts == [1, 1, 1]
 
 
+def test_count_motif_in_segments_full_mode():
+    sequence = "ATGAAATG"
+    motif = "TGA"
+    counts = count_motif_in_segments(sequence, motif, segment_length=4, mode="full")
+    assert counts == [1, 0]
+
+
 def test_build_statistics_dataframe():
     sequence = "ATGATGATG"
     motif = "ATG"
@@ -47,6 +54,16 @@ def test_build_statistics_dataframe():
     assert df["motif_count"].sum() == 3
     assert "motif_positions" in df.columns
     assert "segment_length" in df.columns
+
+
+def test_build_statistics_dataframe_full_mode():
+    sequence = "ATGAAATG"
+    motif = "TGA"
+    df = build_statistics_dataframe(sequence, motif, segment_length=4, mode="full")
+
+    assert df["motif_count"].sum() == 1
+    assert df.loc[0, "motif_count"] == 1
+    assert df.loc[1, "motif_count"] == 0
 
 
 def test_compare_sequences():
@@ -63,6 +80,7 @@ def test_compare_sequences():
     assert "sequence_2_per_1000_nt" in df.columns
     assert "count_difference" in df.columns
     assert len(df) == 2
+
 
 def test_find_motif_positions_with_iupac_n():
     sequence = "ATGATCATAATT"

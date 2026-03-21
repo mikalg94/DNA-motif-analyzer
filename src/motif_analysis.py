@@ -1,5 +1,7 @@
-import pandas as pd
 import re
+
+import numpy as np
+import pandas as pd
 
 IUPAC_MAP = {
     "A": "A",
@@ -23,6 +25,7 @@ IUPAC_MAP = {
 def motif_to_regex(motif):
     motif = motif.upper()
     return "".join(IUPAC_MAP.get(char, re.escape(char)) for char in motif)
+
 
 def find_motif_positions(sequence, motif):
     positions = []
@@ -54,24 +57,72 @@ def segment_sequence(sequence, segment_length=10):
     return segments
 
 
-def count_motif_in_segments(sequence, motif, segment_length=10):
+def count_motif_in_segments(sequence, motif, segment_length=10, mode="start"):
     positions = find_motif_positions(sequence, motif)
     segment_count = (len(sequence) + segment_length - 1) // segment_length
     counts = [0] * segment_count
+    motif_len = len(motif)
 
     for position in positions:
         segment_index = position // segment_length
-        counts[segment_index] += 1
+        segment_start = segment_index * segment_length
+        segment_end = min(segment_start + segment_length - 1, len(sequence) - 1)
+
+        if mode == "start":
+            counts[segment_index] += 1
+        elif mode == "full":
+            if position + motif_len - 1 <= segment_end:
+                counts[segment_index] += 1
+        else:
+            raise ValueError("Mode must be 'start' or 'full'.")
 
     return counts
+
+
+def calculate_gc_content(sequence):
+    if not sequence:
+        return 0.0
+
+    sequence_array = np.array(list(sequence.upper()))
+    gc_count = np.sum((sequence_array == "G") | (sequence_array == "C"))
+
+    return round(float((gc_count / len(sequence_array)) * 100), 3)
+
+
+def calculate_gc_content_per_segment(sequence, segment_length=10):
+    segments = segment_sequence(sequence, segment_length)
+
+    if not segments:
+        return []
+
+    gc_values = []
+    for segment in segments:
+        segment_array = np.array(list(segment.upper()))
+
+        if segment_array.size == 0:
+            gc_values.append(0.0)
+            continue
+
+        gc_count = np.sum((segment_array == "G") | (segment_array == "C"))
+        gc_percent = (gc_count / segment_array.size) * 100
+        gc_values.append(round(float(gc_percent), 3))
+
+    return gc_values
+
 
 def build_statistics_dataframe(sequence, motif, segment_length=10, mode="start"):
     segments = segment_sequence(sequence, segment_length)
     motif_positions = find_motif_positions(sequence, motif)
-    motif_counts = count_motif_in_segments(sequence, motif, segment_length)
+    motif_counts = count_motif_in_segments(
+        sequence,
+        motif,
+        segment_length,
+        mode=mode
+    )
     gc_values = calculate_gc_content_per_segment(sequence, segment_length)
 
     data = []
+    motif_len = len(motif)
 
     for i, segment in enumerate(segments):
         start = i * segment_length
@@ -82,12 +133,13 @@ def build_statistics_dataframe(sequence, motif, segment_length=10, mode="start")
                 pos for pos in motif_positions
                 if start <= pos <= end
             ]
-        else:  # full containment
-            motif_len = len(motif)
+        elif mode == "full":
             segment_positions = [
                 pos for pos in motif_positions
                 if start <= pos and (pos + motif_len - 1) <= end
             ]
+        else:
+            raise ValueError("Mode must be 'start' or 'full'.")
 
         data.append({
             "segment_id": i + 1,
@@ -99,8 +151,7 @@ def build_statistics_dataframe(sequence, motif, segment_length=10, mode="start")
             "gc_content": gc_values[i],
         })
 
-    df = pd.DataFrame(data)
-    return df
+    return pd.DataFrame(data)
 
 
 def analyze_multiple_motifs(sequence, motifs):
@@ -149,42 +200,20 @@ def compare_sequences(sequence1, sequence2, motifs):
 
     return pd.DataFrame(comparison_data)
 
-def calculate_gc_content(sequence):
-    if not sequence:
-        return 0.0
-
-    sequence = sequence.upper()
-    gc_count = sequence.count("G") + sequence.count("C")
-
-    return round((gc_count / len(sequence)) * 100, 3)
-
-
-def calculate_gc_content_per_segment(sequence, segment_length=10):
-    segments = segment_sequence(sequence, segment_length)
-    gc_values = []
-
-    for segment in segments:
-        if not segment:
-            gc_values.append(0.0)
-            continue
-
-        gc_count = segment.count("G") + segment.count("C")
-        gc_percent = (gc_count / len(segment)) * 100
-        gc_values.append(round(gc_percent, 3))
-
-    return gc_values
 
 def calculate_at_content(sequence):
     if not sequence:
         return 0.0
 
-    sequence = sequence.upper()
-    at_count = sequence.count("A") + sequence.count("T")
-    return round((at_count / len(sequence)) * 100, 3)
+    sequence_array = np.array(list(sequence.upper()))
+    at_count = np.sum((sequence_array == "A") | (sequence_array == "T"))
+
+    return round(float((at_count / len(sequence_array)) * 100), 3)
 
 
 def count_unknown_bases(sequence):
-    return sequence.upper().count("N")
+    sequence_array = np.array(list(sequence.upper()))
+    return int(np.sum(sequence_array == "N"))
 
 
 def calculate_motif_density_per_1000_nt(sequence, motif):
@@ -196,16 +225,42 @@ def calculate_motif_density_per_1000_nt(sequence, motif):
     return round((count / sequence_length) * 1000, 3)
 
 
-def calculate_average_motifs_per_segment(sequence, motif, segment_length=10):
-    counts = count_motif_in_segments(sequence, motif, segment_length)
-    if not counts:
+def calculate_average_motifs_per_segment(sequence, motif, segment_length=10, mode="start"):
+    counts = np.array(
+        count_motif_in_segments(sequence, motif, segment_length, mode=mode),
+        dtype=float
+    )
+
+    if counts.size == 0:
         return 0.0
 
-    return round(sum(counts) / len(counts), 3)
+    return round(float(np.mean(counts)), 3)
 
 
-def get_segment_with_max_motifs(sequence, motif, segment_length=10):
-    df = build_statistics_dataframe(sequence, motif, segment_length)
+def calculate_segment_motif_statistics(sequence, motif, segment_length=10, mode="start"):
+    counts = np.array(
+        count_motif_in_segments(sequence, motif, segment_length, mode=mode),
+        dtype=float
+    )
+
+    if counts.size == 0:
+        return {
+            "mean": 0.0,
+            "std": 0.0,
+            "max": 0,
+            "min": 0,
+        }
+
+    return {
+        "mean": round(float(np.mean(counts)), 3),
+        "std": round(float(np.std(counts)), 3),
+        "max": int(np.max(counts)),
+        "min": int(np.min(counts)),
+    }
+
+
+def get_segment_with_max_motifs(sequence, motif, segment_length=10, mode="start"):
+    df = build_statistics_dataframe(sequence, motif, segment_length, mode=mode)
 
     if df.empty:
         return None
