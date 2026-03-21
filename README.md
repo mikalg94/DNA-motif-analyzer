@@ -53,7 +53,6 @@ Aplikacja umożliwia:
 - Python
 - Tkinter
 - Pandas
-- NumPy
 - Matplotlib
 - Plotly
 - Biopython
