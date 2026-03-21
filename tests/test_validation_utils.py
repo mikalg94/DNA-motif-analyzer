@@ -14,9 +14,13 @@ def test_validate_dna_sequence_valid():
     validate_dna_sequence("ATCGN")
 
 
+def test_validate_dna_sequence_iupac_valid():
+    validate_dna_sequence("ATCGRYSWKMBDHVN")
+
+
 def test_validate_dna_sequence_invalid():
     with pytest.raises(ValueError):
-        validate_dna_sequence("ATXB")
+        validate_dna_sequence("ATXZ")
 
 
 def test_validate_motif_invalid():
@@ -59,9 +63,16 @@ def test_get_sequence_warning_for_many_unknown_bases():
     assert "unknown nucleotides" in warning
 
 
+def test_get_sequence_warning_for_ambiguous_iupac_bases():
+    warning = get_sequence_warning("ATGCRYATGC")
+    assert warning is not None
+    assert "ambiguous IUPAC nucleotides" in warning
+
+
 def test_get_sequence_warning_for_clean_sequence():
     warning = get_sequence_warning("ATGCGTATGC")
     assert warning is None
+
 
 def test_validate_motif_iupac_valid():
     validate_motif("ATRYN")

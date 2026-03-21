@@ -15,8 +15,8 @@ def validate_dna_sequence(sequence: str) -> None:
 
     if not DNA_PATTERN.fullmatch(sequence):
         raise ValueError(
-            "DNA sequence contains invalid characters. Allowed: A, C, G, T, "
-            "R, Y, S, W, K, M, B, D, H, V, N."
+            "DNA sequence contains invalid characters. Allowed DNA/IUPAC symbols: "
+            "A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N."
         )
 
 
@@ -27,7 +27,7 @@ def validate_motif(motif: str) -> None:
     if not MOTIF_PATTERN.fullmatch(motif):
         raise ValueError(
             "Motif contains invalid characters. Allowed DNA/IUPAC symbols: "
-            "A, T, C, G, R, Y, S, W, K, M, B, D, H, V, N."
+            "A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N."
         )
 
 
@@ -54,6 +54,14 @@ def get_sequence_warning(sequence: str) -> str | None:
             f"Warning: the sequence contains {n_count} unknown nucleotides ('N'), "
             f"which is {n_ratio:.1%} of the sequence length. "
             f"This may affect motif analysis results."
+        )
+
+    ambiguous_symbols = set(sequence.upper()) - {"A", "C", "G", "T", "N"}
+    if ambiguous_symbols:
+        symbols_text = ", ".join(sorted(ambiguous_symbols))
+        return (
+            f"Warning: the sequence contains ambiguous IUPAC nucleotides "
+            f"({symbols_text}). This may affect motif analysis results."
         )
 
     return None
