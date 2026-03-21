@@ -270,6 +270,22 @@ class App:
             motif,
             segment_length
         )
+    def _prepare_selected_motif_statistics(self):
+        if not self.last_results or not self.sequence:
+            raise ValueError("No analysis results available.")
+
+        self._refresh_statistics_for_selected_motif()
+
+    def show_plot(self):
+        try:
+            self._prepare_selected_motif_statistics()
+            fig = create_motif_distribution_figure(
+                self.last_statistics_df,
+                self.last_selected_motif
+            )
+            self._show_figure_window("Distribution Plot", fig)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate plot: {e}")
 
     def show_interactive_positions_plot(self):
         if not self.last_results or not self.sequence:
