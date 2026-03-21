@@ -1,11 +1,10 @@
 import os
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
-
+from datetime import datetime
 
 def create_motif_distribution_figure(df, motif):
     fig = Figure(figsize=(8, 5))
@@ -183,39 +182,85 @@ def export_results_to_csv(df, output_path):
 
 
 def export_report_to_pdf(df, motif, sequence_length, output_path):
+    total_motif_count = int(df["motif_count"].sum())
+    number_of_segments = len(df)
+    average_per_segment = round(total_motif_count / number_of_segments, 3) if number_of_segments else 0
+
+    if not df.empty:
+        max_count_row = df.loc[df["motif_count"].idxmax()]
+        max_segment_text = (
+            f"Segment {int(max_count_row['segment_id'])} "
+            f"({int(max_count_row['start'])}-{int(max_count_row['end'])}) "
+            f"- count: {int(max_count_row['motif_count'])}"
+        )
+    else:
+        max_segment_text = "No segment data available."
+
     with PdfPages(output_path) as pdf:
+        # Strona 1 - podsumowanie raportu
         fig, ax = plt.subplots(figsize=(8.27, 11.69))
         ax.axis("off")
 
-        summary_text = (
-            f"DNA Motif Analyzer Report\n\n"
-            f"Motif: {motif}\n"
-            f"Sequence length: {sequence_length}\n"
-            f"Total motif count: {df['motif_count'].sum()}\n"
-            f"Number of segments: {len(df)}\n\n"
-            f"Segment statistics:\n"
+        summary_lines = [
+            "DNA Motif Analyzer Report",
+            "",
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Motif: {motif}",
+            f"Sequence length: {sequence_length}",
+            f"Total motif count: {total_motif_count}",
+            f"Number of segments: {number_of_segments}",
+            f"Average motif count per segment: {average_per_segment}",
+            f"Segment with highest count: {max_segment_text}",
+            "",
+            "Report contents:",
+            "- Summary page",
+            "- Motif distribution chart",
+            "- Segment statistics table",
+        ]
+
+        ax.text(
+            0.05,
+            0.95,
+            "\n".join(summary_lines),
+            fontsize=11,
+            va="top"
         )
-
-        segment_lines = []
-        for _, row in df.iterrows():
-            segment_lines.append(
-                f"Segment {row['segment_id']}: "
-                f"{row['start']}-{row['end']}, "
-                f"count={row['motif_count']}, "
-                f"positions={row['motif_positions']}"
-            )
-
-        full_text = summary_text + "\n".join(segment_lines[:25])
-
-        ax.text(0.05, 0.95, full_text, fontsize=10, va="top")
         pdf.savefig(fig)
         plt.close(fig)
 
-        fig, ax = plt.subplots(figsize=(8, 5))
+        # Strona 2 - wykres rozmieszczenia motywu
+        fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(df["segment_id"], df["motif_count"])
         ax.set_xlabel("Segment")
         ax.set_ylabel("Motif count")
         ax.set_title(f"Distribution of motif {motif}")
+        plt.tight_layout()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        # Strona 3 - tabela segmentów
+        fig, ax = plt.subplots(figsize=(11.69, 8.27))
+        ax.axis("off")
+
+        table_df = df.copy()
+        table_df["motif_positions"] = table_df["motif_positions"].astype(str)
+
+        # ograniczenie długości tekstu w komórkach, żeby tabela była czytelniejsza
+        table_df["motif_positions"] = table_df["motif_positions"].apply(
+            lambda x: x if len(x) <= 25 else x[:22] + "..."
+        )
+
+        table = ax.table(
+            cellText=table_df.values,
+            colLabels=table_df.columns,
+            loc="center"
+        )
+
+        table.auto_set_font_size(False)
+        table.set_fontsize(8)
+        table.scale(1, 1.4)
+
+        ax.set_title("Segment statistics", pad=20)
         plt.tight_layout()
         pdf.savefig(fig)
         plt.close(fig)
