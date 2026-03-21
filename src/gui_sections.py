@@ -293,11 +293,19 @@ def build_actions_frame(app):
 
     app.analyze_button = ttk.Button(
         app.analysis_actions_frame,
-        text="Analyze",
-        command=app.run_analysis,
+        text="Analyze Sequence 1",
+        command=app.run_analysis_sequence_1,
         width=28
     )
     app.analyze_button.pack(pady=3)
+
+    app.analyze_button_2 = ttk.Button(
+        app.analysis_actions_frame,
+        text="Analyze Sequence 2",
+        command=app.run_analysis_sequence_2,
+        width=28
+    )
+    app.analyze_button_2.pack(pady=3)
 
     app.compare_button = ttk.Button(
         app.analysis_actions_frame,

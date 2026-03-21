@@ -88,6 +88,7 @@ class App:
         has_any_export_data = has_statistics or has_comparison
 
         self.analyze_button.config(state="normal" if has_sequence_1 else "disabled")
+        self.analyze_button_2.config(state="normal" if has_sequence_2 else "disabled")
         self.compare_button.config(
             state="normal" if has_sequence_1 and has_sequence_2 else "disabled"
         )
@@ -460,9 +461,9 @@ class App:
             self._set_status("Failed to generate overlay plot")
             messagebox.showerror("Error", f"Failed to generate overlay plot: {e}")
 
-    def _build_extended_sequence_statistics(self, motif, segment_length):
+    def _build_extended_sequence_statistics_for_sequence(self, sequence, motif, segment_length):
         max_segment = get_segment_with_max_motifs(
-            self.sequence,
+            sequence,
             motif,
             segment_length
         )
@@ -477,20 +478,61 @@ class App:
             )
 
         return {
-            "gc_content": calculate_gc_content(self.sequence),
-            "at_content": calculate_at_content(self.sequence),
-            "unknown_bases": count_unknown_bases(self.sequence),
+            "gc_content": calculate_gc_content(sequence),
+            "at_content": calculate_at_content(sequence),
+            "unknown_bases": count_unknown_bases(sequence),
             "motif_density_per_1000_nt": calculate_motif_density_per_1000_nt(
-                self.sequence,
+                sequence,
                 motif
             ),
             "average_motifs_per_segment": calculate_average_motifs_per_segment(
-                self.sequence,
+                sequence,
                 motif,
                 segment_length
             ),
             "max_segment_text": max_segment_text,
         }
+
+    def _format_analysis_results_for_sequence(
+        self,
+        sequence,
+        sequence_label,
+        motifs,
+        segment_length,
+        results
+    ):
+        selected_motif = self.last_selected_motif or motifs[0]
+        extended_stats = self._build_extended_sequence_statistics_for_sequence(
+            sequence,
+            selected_motif,
+            segment_length
+        )
+
+        output = [
+            f"{sequence_label.upper()} ANALYSIS RESULTS\n",
+            f"Sequence length: {len(sequence)}",
+            f"GC content: {extended_stats['gc_content']}%",
+            f"AT content: {extended_stats['at_content']}%",
+            f"Unknown bases (N): {extended_stats['unknown_bases']}",
+            f"Recognized motifs: {', '.join(motifs)}",
+            f"Segment length: {segment_length}",
+            f"Selected motif for detailed statistics: {selected_motif}",
+            f"Motif density per 1000 nt: {extended_stats['motif_density_per_1000_nt']}",
+            f"Average motifs per segment: {extended_stats['average_motifs_per_segment']}",
+            f"Segment with highest count: {extended_stats['max_segment_text']}\n",
+        ]
+
+        for result in results:
+            output.append(
+                f"Motif: {result['motif']} | "
+                f"Count: {result['count']} | "
+                f"Positions: {result['positions']}"
+            )
+
+        output.append("\nSegment statistics for selected motif:\n")
+        output.append(self.last_statistics_df.to_string(index=False))
+
+        return "\n".join(output)
 
     def _filter_and_sort_results(self, results):
         processed_results = results[:]
@@ -651,6 +693,68 @@ class App:
             motifs
         )
         return self.last_comparison_df
+
+    def _run_analysis_for_sequence(self, sequence, sequence_label):
+        if not sequence:
+            self._set_status("Analysis failed")
+            messagebox.showerror("Error", f"{sequence_label} is not loaded.")
+            return
+
+        try:
+            self._set_status(f"Running analysis for {sequence_label}...")
+            motifs, segment_length = self._get_motifs_and_segment_length()
+            self._validate_analysis_inputs(motifs, sequence)
+
+            results = analyze_multiple_motifs(sequence, motifs)
+
+            self.last_results = results
+            self.last_comparison_df = None
+
+            self.selected_motif_combobox["values"] = motifs
+            self.selected_motif_combobox.set(motifs[0])
+
+            self.last_selected_motif = motifs[0]
+            self.last_statistics_df = build_statistics_dataframe(
+                sequence,
+                self.last_selected_motif,
+                segment_length,
+                mode=self.segment_mode_var.get()
+            )
+
+            final_text = self._format_analysis_results_for_sequence(
+                sequence,
+                sequence_label,
+                motifs,
+                segment_length,
+                results
+            )
+
+            self._save_analysis_history_for_sequence(
+                sequence,
+                sequence_label,
+                motifs,
+                segment_length,
+                results
+            )
+
+            self._display_results(
+                f"{sequence_label} Analysis Results",
+                final_text,
+                dataframe=self.last_statistics_df
+            )
+
+            self._update_action_buttons_state()
+            self._set_status(f"Analysis complete for {sequence_label}")
+
+        except Exception as e:
+            self._set_status("Analysis failed")
+            messagebox.showerror("Error", str(e))
+
+    def run_analysis_sequence_1(self):
+        self._run_analysis_for_sequence(self.sequence, "Sequence 1")
+
+    def run_analysis_sequence_2(self):
+        self._run_analysis_for_sequence(self.sequence_2, "Sequence 2")
 
     def run_analysis(self):
         if not self.sequence:
@@ -1083,6 +1187,27 @@ class App:
         except Exception as e:
             self._set_status("PDF export failed")
             messagebox.showerror("Error", f"Failed to export PDF: {e}")
+
+    def _save_analysis_history_for_sequence(
+        self,
+        sequence,
+        sequence_label,
+        motifs,
+        segment_length,
+        results
+    ):
+        history_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "operation": f"analysis_{sequence_label.lower().replace(' ', '_')}",
+            "sequence_1_length": len(sequence),
+            "sequence_2_length": "",
+            "motifs": ", ".join(motifs),
+            "segment_length": segment_length,
+            "details": "; ".join(
+                [f"{result['motif']}={result['count']}" for result in results]
+            )
+        }
+        save_analysis_history(history_entry)
 
     def show_analysis_history(self):
         history_path = "results/analysis_history.csv"
