@@ -13,6 +13,7 @@ from src.export_utils import (
     create_motif_positions_figure,
     create_multiple_motifs_summary_figure,
     create_gc_content_figure,
+    create_gc_comparison_figure,
     export_report_to_pdf,
     export_results_to_csv,
     interactive_motif_positions,
@@ -322,6 +323,32 @@ class App:
                 messagebox.showerror("Error", f"Failed to generate GC plot: {e}")
         else:
             messagebox.showerror("Error", "No analysis results available.")
+
+    def show_gc_comparison_plot(self):
+        if not self.sequence or not self.sequence_2:
+            messagebox.showerror("Error", "Both sequences must be loaded.")
+            return
+
+        try:
+            segment_length = self._get_segment_length()
+
+            df1 = build_statistics_dataframe(
+                self.sequence,
+                self.last_selected_motif or "ATG",
+                segment_length
+            )
+
+            df2 = build_statistics_dataframe(
+                self.sequence_2,
+                self.last_selected_motif or "ATG",
+                segment_length
+            )
+
+            fig = create_gc_comparison_figure(df1, df2)
+            self._show_figure_window("GC Comparison", fig)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate GC comparison: {e}")
 
     def _format_analysis_results(self, motifs, segment_length, results):
         output = [

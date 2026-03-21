@@ -73,6 +73,22 @@ def create_gc_content_figure(df):
     fig.tight_layout()
     return fig
 
+def create_gc_comparison_figure(df1, df2):
+    fig = Figure(figsize=(9, 5))
+    ax = fig.add_subplot(111)
+
+    ax.plot(df1["segment_id"], df1["gc_content"], marker="o", label="Sequence 1")
+    ax.plot(df2["segment_id"], df2["gc_content"], marker="s", label="Sequence 2")
+
+    ax.set_xlabel("Segment")
+    ax.set_ylabel("GC content (%)")
+    ax.set_title("GC-content comparison between sequences")
+
+    ax.legend()
+    fig.tight_layout()
+
+    return fig
+
 # Functions below are used for saving plots to files
 # and for optional direct display outside the Tkinter windows.
 

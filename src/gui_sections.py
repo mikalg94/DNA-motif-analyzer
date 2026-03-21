@@ -228,6 +228,14 @@ def build_actions_frame(app):
     )
     app.show_gc_button.pack(pady=3)
 
+    app.show_gc_comparison_button = tk.Button(
+        app.actions_frame,
+        text="Compare GC Content",
+        command=app.show_gc_comparison_plot,
+        width=25
+    )
+    app.show_gc_comparison_button.pack(pady=3)
+
     app.show_multi_plot_button = tk.Button(
         app.actions_frame,
         text="Show Multi-Motif Summary",
