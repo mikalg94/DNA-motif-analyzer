@@ -81,12 +81,17 @@ def main():
 
     args = parser.parse_args()
 
-    if args.file and args.motifs:
+    cli_requested = args.file is not None or args.motifs is not None
+
+    if cli_requested:
+        if not args.file or not args.motifs:
+            parser.error("For CLI mode, both --file and --motifs are required.")
         run_cli(args)
-    else:
-        root = tk.Tk()
-        app = App(root)
-        root.mainloop()
+        return
+
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
 
 
 if __name__ == "__main__":

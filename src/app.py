@@ -211,6 +211,18 @@ class App:
             self.sequence_2 = sequence
             self.file_label_2.config(text=source_label)
 
+    def _clear_single_analysis_state(self):
+        self.last_results = []
+        self.last_statistics_df = None
+        self.last_selected_motif = None
+        self.last_analyzed_sequence = ""
+        self.last_analyzed_sequence_label = ""
+        self.selected_motif_combobox["values"] = []
+        self.selected_motif_combobox.set("")
+
+    def _clear_comparison_state(self):
+        self.last_comparison_df = None
+
     def _show_sequence_warning_if_needed(self, sequence):
         warning_message = get_sequence_warning(sequence)
         if warning_message:
@@ -727,8 +739,9 @@ class App:
             results = analyze_multiple_motifs(sequence, motifs)
             display_results = self._filter_and_sort_results(results)
 
+            self._clear_comparison_state()
+
             self.last_results = results
-            self.last_comparison_df = None
             self.last_analyzed_sequence = sequence
             self.last_analyzed_sequence_label = sequence_label
 
@@ -825,6 +838,8 @@ class App:
                         self.last_comparison_df = self.last_comparison_df.head(top_n)
                 except ValueError:
                     raise ValueError("Top N must be a positive integer.")
+
+            self._clear_single_analysis_state()
 
             final_text = self._format_comparison_results(motifs)
             self._save_comparison_history(motifs)
