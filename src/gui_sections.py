@@ -195,8 +195,40 @@ def build_actions_frame(app):
     )
     app.actions_frame.pack(fill="x", padx=15, pady=5)
 
-    app.analyze_button = tk.Button(
+    app.analysis_actions_frame = tk.LabelFrame(
         app.actions_frame,
+        text="Analysis",
+        padx=10,
+        pady=10
+    )
+    app.analysis_actions_frame.pack(fill="x", padx=5, pady=5)
+
+    app.visualization_actions_frame = tk.LabelFrame(
+        app.actions_frame,
+        text="Visualization",
+        padx=10,
+        pady=10
+    )
+    app.visualization_actions_frame.pack(fill="x", padx=5, pady=5)
+
+    app.export_actions_frame = tk.LabelFrame(
+        app.actions_frame,
+        text="Export",
+        padx=10,
+        pady=10
+    )
+    app.export_actions_frame.pack(fill="x", padx=5, pady=5)
+
+    app.other_actions_frame = tk.LabelFrame(
+        app.actions_frame,
+        text="Other",
+        padx=10,
+        pady=10
+    )
+    app.other_actions_frame.pack(fill="x", padx=5, pady=5)
+
+    app.analyze_button = tk.Button(
+        app.analysis_actions_frame,
         text="Analyze",
         command=app.run_analysis,
         width=25
@@ -204,55 +236,23 @@ def build_actions_frame(app):
     app.analyze_button.pack(pady=3)
 
     app.compare_button = tk.Button(
-        app.actions_frame,
+        app.analysis_actions_frame,
         text="Compare Sequences",
         command=app.run_comparison,
         width=25
     )
     app.compare_button.pack(pady=3)
 
-    app.export_csv_button = tk.Button(
-        app.actions_frame,
-        text="Export CSV",
-        command=app.export_csv,
-        width=25
-    )
-    app.export_csv_button.pack(pady=3)
-
     app.show_plot_button = tk.Button(
-        app.actions_frame,
+        app.visualization_actions_frame,
         text="Show Distribution Plot",
         command=app.show_plot,
         width=25
     )
     app.show_plot_button.pack(pady=3)
 
-    app.show_gc_button = tk.Button(
-        app.actions_frame,
-        text="Show GC Content Plot",
-        command=app.show_gc_plot,
-        width=25
-    )
-    app.show_gc_button.pack(pady=3)
-
-    app.show_gc_comparison_button = tk.Button(
-        app.actions_frame,
-        text="Compare GC Content",
-        command=app.show_gc_comparison_plot,
-        width=25
-    )
-    app.show_gc_comparison_button.pack(pady=3)
-
-    app.show_gc_motif_overlay_button = tk.Button(
-        app.actions_frame,
-        text="GC + Motif Overlay",
-        command=app.show_gc_motif_overlay,
-        width=25
-    )
-    app.show_gc_motif_overlay_button.pack(pady=3)
-
     app.show_multi_plot_button = tk.Button(
-        app.actions_frame,
+        app.visualization_actions_frame,
         text="Show Multi-Motif Summary",
         command=app.show_multi_motif_plot,
         width=25
@@ -260,7 +260,7 @@ def build_actions_frame(app):
     app.show_multi_plot_button.pack(pady=3)
 
     app.show_positions_button = tk.Button(
-        app.actions_frame,
+        app.visualization_actions_frame,
         text="Show Motif Positions",
         command=app.show_positions_plot,
         width=25
@@ -268,15 +268,47 @@ def build_actions_frame(app):
     app.show_positions_button.pack(pady=3)
 
     app.show_interactive_button = tk.Button(
-        app.actions_frame,
+        app.visualization_actions_frame,
         text="Open Interactive Motif Plot",
         command=app.show_interactive_positions_plot,
         width=25
     )
     app.show_interactive_button.pack(pady=3)
 
+    app.show_gc_button = tk.Button(
+        app.visualization_actions_frame,
+        text="Show GC Content Plot",
+        command=app.show_gc_plot,
+        width=25
+    )
+    app.show_gc_button.pack(pady=3)
+
+    app.show_gc_comparison_button = tk.Button(
+        app.visualization_actions_frame,
+        text="Compare GC Content",
+        command=app.show_gc_comparison_plot,
+        width=25
+    )
+    app.show_gc_comparison_button.pack(pady=3)
+
+    app.show_gc_motif_overlay_button = tk.Button(
+        app.visualization_actions_frame,
+        text="GC + Motif Overlay",
+        command=app.show_gc_motif_overlay,
+        width=25
+    )
+    app.show_gc_motif_overlay_button.pack(pady=3)
+
+    app.export_csv_button = tk.Button(
+        app.export_actions_frame,
+        text="Export CSV",
+        command=app.export_csv,
+        width=25
+    )
+    app.export_csv_button.pack(pady=3)
+
     app.save_plot_button = tk.Button(
-        app.actions_frame,
+        app.export_actions_frame,
         text="Save Plot as PNG",
         command=app.save_plot,
         width=25
@@ -284,7 +316,7 @@ def build_actions_frame(app):
     app.save_plot_button.pack(pady=3)
 
     app.export_pdf_button = tk.Button(
-        app.actions_frame,
+        app.export_actions_frame,
         text="Export PDF",
         command=app.export_pdf,
         width=25
@@ -292,7 +324,7 @@ def build_actions_frame(app):
     app.export_pdf_button.pack(pady=3)
 
     app.show_history_button = tk.Button(
-        app.actions_frame,
+        app.other_actions_frame,
         text="Show Analysis History",
         command=app.show_analysis_history,
         width=25
