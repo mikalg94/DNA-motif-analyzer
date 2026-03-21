@@ -154,6 +154,7 @@ def build_analysis_frame(app):
     app.motif_label.pack(pady=3)
 
     app.motif_entry = tk.Entry(app.analysis_frame, width=45)
+    app.motif_entry.insert(0, "ATG, TATA, CGCG")
     app.motif_entry.pack(pady=3)
 
     app.selected_motif_label = tk.Label(
@@ -174,7 +175,13 @@ def build_analysis_frame(app):
     app.segment_label = tk.Label(app.analysis_frame, text="Segment length:")
     app.segment_label.pack(pady=3)
 
-    app.segment_entry = tk.Entry(app.analysis_frame, width=10)
+    app.segment_entry = tk.Spinbox(
+        app.analysis_frame,
+        from_=1,
+        to=10000,
+        width=10
+    )
+    app.segment_entry.delete(0, "end")
     app.segment_entry.insert(0, "10")
     app.segment_entry.pack(pady=3)
 
