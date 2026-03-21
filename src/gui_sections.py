@@ -19,7 +19,12 @@ def build_main_layout(app):
         ),
     )
 
-    app.main_canvas.create_window((0, 0), window=app.scrollable_frame, anchor="n")
+    app.canvas_window_id = app.main_canvas.create_window(
+        (0, 0),
+        window=app.scrollable_frame,
+        anchor="n"
+    )
+
     app.main_canvas.configure(yscrollcommand=app.main_scrollbar.set)
 
     app.main_canvas.pack(side="left", fill="both", expand=True)
@@ -42,6 +47,17 @@ def build_main_layout(app):
 
     app.right_column = ttk.Frame(app.content_frame)
     app.right_column.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
+
+    def _center_content_in_canvas(event):
+        canvas_width = event.width
+        desired_width = min(canvas_width - 30, 1400)
+        if desired_width < 600:
+            desired_width = canvas_width - 10
+
+        app.main_canvas.itemconfigure(app.canvas_window_id, width=desired_width)
+        app.main_canvas.coords(app.canvas_window_id, canvas_width / 2, 0)
+
+    app.main_canvas.bind("<Configure>", _center_content_in_canvas)
 
 def build_title(app):
     app.title_label = ttk.Label(
