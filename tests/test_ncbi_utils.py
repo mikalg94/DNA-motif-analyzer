@@ -17,7 +17,7 @@ class MockHandle:
 def test_fetch_sequence_from_ncbi_success(monkeypatch):
     fasta_data = ">Mock sequence\nATGCGTATGC\n"
 
-    def mock_efetch(db, id, rettype, retmode):
+    def mock_efetch(db, id, rettype, retmode, **kwargs):
         return MockHandle(fasta_data)
 
     monkeypatch.setattr("src.ncbi_utils.Entrez.efetch", mock_efetch)
@@ -37,7 +37,7 @@ def test_fetch_sequence_from_ncbi_empty_email():
 
 
 def test_fetch_sequence_from_ncbi_empty_response(monkeypatch):
-    def mock_efetch(db, id, rettype, retmode):
+    def mock_efetch(db, id, rettype, retmode, **kwargs):
         return MockHandle("")
 
     monkeypatch.setattr("src.ncbi_utils.Entrez.efetch", mock_efetch)
