@@ -2,9 +2,12 @@
 
 DNA Motif Analyzer to aplikacja napisana w Pythonie do analizy sekwencji DNA i wyszukiwania motywów takich jak ATG, TATA czy CGCG.
 
-## Opis projektu
+---
+
+## 🧬 Opis projektu
 
 Aplikacja umożliwia:
+
 - wczytywanie sekwencji DNA z plików TXT, FASTA i FA,
 - pobieranie sekwencji z bazy NCBI,
 - wyszukiwanie jednego lub wielu motywów,
@@ -12,67 +15,118 @@ Aplikacja umożliwia:
 - zliczanie liczby wystąpień,
 - analizę segmentową sekwencji,
 - porównanie dwóch sekwencji,
-- eksport wyników do CSV,
-- zapis wykresów do PNG,
-- generowanie raportów PDF,
-- interaktywną wizualizację pozycji motywów.
+- wizualizację wyników (Matplotlib, Plotly),
+- eksport wyników do CSV, PDF i JSON,
+- interaktywną wizualizację pozycji motywów,
+- pracę w trybie GUI oraz CLI.
 
-## Zaimplementowane funkcjonalności
+---
 
-### Wariant minimalny
-- wczytywanie sekwencji z pliku FASTA/TXT,
-- wyszukiwanie motywu i jego pozycji,
-- obliczanie liczby wystąpień,
-- segmentacja sekwencji,
-- analiza statystyczna z użyciem Pandas,
-- wykres słupkowy rozmieszczenia motywów,
-- GUI do wyboru pliku i motywu,
-- eksport wyników do CSV.
+## 🚀 Instalacja i uruchomienie
 
-### Wariant rozszerzony
-- pobieranie sekwencji z NCBI,
-- obsługa wielu motywów jednocześnie,
-- porównanie dwóch sekwencji,
-- interaktywna wizualizacja pozycji motywów,
-- eksport CSV i PDF z wykresem.
-
-## Dodatkowe ulepszenia
-- uporządkowany interfejs graficzny podzielony na sekcje,
-- wykres podsumowujący liczbę wystąpień wielu motywów jednocześnie,
-- historia analiz i porównań zapisywana do pliku CSV.
-- wykresy Matplotlib są wyświetlane w osobnych oknach Tkinter z paskiem narzędzi,
-- interaktywny wykres Plotly jest zapisywany do pliku HTML i otwierany z poziomu osobnego okna aplikacji.
-- obsługa motywów z symbolami IUPAC, np. N, R, Y,
-
-Przykład:
-- motif `ATN` dopasuje `ATA`, `ATC`, `ATG`, `ATT`
-- motif `ARY` dopasuje wzorce zgodne z A-(A/G)-(C/T)
-
-## Uwagi końcowe
-
-- Wyniki analizy oraz porównania wyświetlane są w osobnych oknach z możliwością przewijania.
-- Motywy nakładające się na siebie są poprawnie wykrywane.
-- Statystyki segmentowe liczone są na podstawie pozycji startowej motywów.
-
-## Technologie
-- Python
-- Tkinter
-- Pandas
-- Matplotlib
-- Plotly
-- Biopython
-- Pytest
-
-## Tryb CLI
-
-Aplikację można uruchomić w trybie tekstowym:
+### 1. Klonowanie repozytorium
 
 ```bash
+git clone https://github.com/TWOJE_NAZWA_REPO.git
+cd dna_motif_analyzer_project
+```
+### 2. Utworzenie środowiska wirtualnego
+```
+python -m venv venv
+```
+### 3. Aktywacja środowiska
+
+Windows:
+```
+venv\Scripts\activate
+```
+Linux / macOS:
+```
+source venv/bin/activate
+```
+### 4. Instalacja zależności
+```
+pip install -r requirements.txt
+```
+### 5. Uruchomienie aplikacji GUI
+```
+python main.py
+```
+##### 🧪 Uruchamianie testów
+```
+pytest
+```
+#### 💻 Tryb CLI (bez GUI)
+
+Aplikację można uruchomić również w trybie tekstowym:
+```
 python main.py --file data/example_sequence.fasta --motifs ATG,TATA --segment 10
+```
+Parametry:
 
-## Struktura projektu
+--file – ścieżka do pliku (TXT/FASTA),
 
-```text
+--motifs – motywy oddzielone przecinkami,
+
+--segment – długość segmentu (opcjonalnie, domyślnie 10).
+
+#### 📊 Przykładowe użycie GUI
+Wybierz plik z sekwencją (Choose first sequence file)
+lub pobierz sekwencję z NCBI
+
+Wpisz motywy, np.:
+
+ATG, TATA, CGCG
+Ustaw długość segmentu (np. 10)
+Kliknij Analyze
+Przeglądaj wyniki:
+podsumowanie tekstowe,
+tabelę wyników,
+wykresy,
+interaktywną wizualizację.
+🧬 Przykładowe accession ID (NCBI)
+
+Możesz użyć:
+
+NM_000518 – ludzka hemoglobina
+NC_012920 – mitochondrialne DNA człowieka
+📸 Zrzuty ekranu
+
+(Dodaj po wykonaniu screenów)
+
+![Main window](screenshots/main_window.png)
+![Results](screenshots/results.png)
+![Plots](screenshots/plots.png)
+
+👉 Utwórz folder:
+
+screenshots/
+🧠 Funkcjonalności projektu
+Wariant minimalny
+wczytywanie sekwencji z pliku FASTA/TXT,
+wyszukiwanie motywów i ich pozycji,
+zliczanie liczby wystąpień,
+segmentacja sekwencji,
+analiza statystyczna (Pandas),
+wykres słupkowy rozmieszczenia motywów,
+GUI do wyboru pliku i motywu,
+eksport wyników do CSV.
+Wariant rozszerzony
+pobieranie sekwencji z NCBI (Biopython),
+obsługa wielu motywów,
+porównanie dwóch sekwencji,
+interaktywna wizualizacja (Plotly),
+eksport PDF i JSON (pełna sesja),
+tryb CLI,
+obsługa symboli IUPAC (np. N, R, Y),
+dodatkowe statystyki:
+GC-content,
+AT-content,
+gęstość motywów,
+tabela wyników (Treeview),
+historia analiz,
+ulepszone GUI (ttk, układ kolumnowy, status bar).
+🧱 Struktura projektu
 dna_motif_analyzer_project
 │
 ├── main.py
@@ -83,6 +137,7 @@ dna_motif_analyzer_project
 ├── src
 │   ├── __init__.py
 │   ├── app.py
+│   ├── gui_sections.py
 │   ├── io_utils.py
 │   ├── motif_analysis.py
 │   ├── export_utils.py
@@ -100,3 +155,30 @@ dna_motif_analyzer_project
     ├── test_io_utils.py
     ├── test_motif_analysis.py
     └── test_validation_utils.py
+🛠 Technologie
+Python
+Tkinter / ttk
+Pandas
+NumPy
+Matplotlib
+Plotly
+Biopython
+Pytest
+📌 Uwagi końcowe
+Motywy nakładające się na siebie są poprawnie wykrywane.
+Statystyki segmentowe bazują na pozycji startowej motywu.
+Wyniki dostępne są w formie tekstowej, tabelarycznej i graficznej.
+Aplikacja działa zarówno w trybie GUI, jak i CLI.
+👨‍💻 Autor
+
+Projekt wykonany w ramach projektu zaliczeniowego.
+
+
+---
+
+# 📌 Git (na koniec)
+
+```bash
+git add README.md
+git commit -m "Finalna wersja README z pełną dokumentacją projektu"
+git push
