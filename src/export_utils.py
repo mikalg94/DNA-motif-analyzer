@@ -89,6 +89,37 @@ def create_gc_comparison_figure(df1, df2):
 
     return fig
 
+def create_gc_motif_overlay_figure(df, results, sequence_length):
+    fig = Figure(figsize=(10, 5))
+    ax = fig.add_subplot(111)
+
+    # GC content jako linia
+    ax.plot(df["segment_id"], df["gc_content"], color="blue", marker="o", label="GC content (%)")
+
+    # Motywy jako punkty
+    y_offset = max(df["gc_content"]) + 5 if not df.empty else 5
+
+    for result in results:
+        motif = result["motif"]
+        positions = result["positions"]
+
+        if positions:
+            ax.scatter(
+                positions,
+                [y_offset] * len(positions),
+                label=f"{motif} positions",
+                marker="x"
+            )
+
+    ax.set_xlabel("Position / Segment")
+    ax.set_ylabel("GC content (%)")
+    ax.set_title("GC-content with motif positions overlay")
+
+    ax.legend()
+    fig.tight_layout()
+
+    return fig
+
 # Functions below are used for saving plots to files
 # and for optional direct display outside the Tkinter windows.
 

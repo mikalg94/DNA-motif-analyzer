@@ -14,6 +14,7 @@ from src.export_utils import (
     create_multiple_motifs_summary_figure,
     create_gc_content_figure,
     create_gc_comparison_figure,
+    create_gc_motif_overlay_figure,
     export_report_to_pdf,
     export_results_to_csv,
     interactive_motif_positions,
@@ -349,6 +350,25 @@ class App:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate GC comparison: {e}")
+
+    def show_gc_motif_overlay(self):
+        if not self.last_results or not self.sequence:
+            messagebox.showerror("Error", "No analysis results available.")
+            return
+
+        try:
+            self._prepare_selected_motif_statistics()
+
+            fig = create_gc_motif_overlay_figure(
+                self.last_statistics_df,
+                self.last_results,
+                len(self.sequence)
+            )
+
+            self._show_figure_window("GC + Motif Overlay", fig)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate overlay plot: {e}")
 
     def _format_analysis_results(self, motifs, segment_length, results):
         output = [
