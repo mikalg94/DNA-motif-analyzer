@@ -309,3 +309,16 @@ def build_results_frame(app):
     app.result_text.pack(side="left", fill="both", expand=True)
 
     app.result_scrollbar.config(command=app.result_text.yview)
+
+def build_status_bar(app):
+    app.status_var = tk.StringVar()
+    app.status_var.set("Ready")
+
+    app.status_bar = tk.Label(
+        app.root,
+        textvariable=app.status_var,
+        bd=1,
+        relief=tk.SUNKEN,
+        anchor="w"
+    )
+    app.status_bar.pack(side="bottom", fill="x")
