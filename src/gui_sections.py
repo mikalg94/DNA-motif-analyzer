@@ -175,6 +175,35 @@ def build_analysis_frame(app):
     app.segment_label = tk.Label(app.analysis_frame, text="Segment length:")
     app.segment_label.pack(pady=3)
 
+    app.sort_results_var = tk.StringVar(value="original")
+
+    app.sort_label = tk.Label(app.analysis_frame, text="Sort results:")
+    app.sort_label.pack(pady=3)
+
+    app.sort_combobox = tk.OptionMenu(
+        app.analysis_frame,
+        app.sort_results_var,
+        "original",
+        "count_desc",
+        "count_asc"
+    )
+    app.sort_combobox.config(width=15)
+    app.sort_combobox.pack(pady=3)
+
+    app.only_found_var = tk.BooleanVar(value=False)
+    app.only_found_checkbox = tk.Checkbutton(
+        app.analysis_frame,
+        text="Show only found motifs",
+        variable=app.only_found_var
+    )
+    app.only_found_checkbox.pack(pady=3)
+
+    app.top_n_label = tk.Label(app.analysis_frame, text="Top N motifs (optional):")
+    app.top_n_label.pack(pady=3)
+
+    app.top_n_entry = tk.Entry(app.analysis_frame, width=10)
+    app.top_n_entry.pack(pady=3)
+
     app.segment_entry = tk.Spinbox(
         app.analysis_frame,
         from_=1,

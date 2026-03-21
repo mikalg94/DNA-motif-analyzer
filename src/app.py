@@ -485,6 +485,33 @@ class App:
             "max_segment_text": max_segment_text,
         }
 
+    def _filter_and_sort_results(self, results):
+        processed_results = results[:]
+
+        if self.only_found_var.get():
+            processed_results = [
+                result for result in processed_results
+                if result["count"] > 0
+            ]
+
+        sort_mode = self.sort_results_var.get()
+
+        if sort_mode == "count_desc":
+            processed_results.sort(key=lambda item: item["count"], reverse=True)
+        elif sort_mode == "count_asc":
+            processed_results.sort(key=lambda item: item["count"])
+
+        top_n_text = self.top_n_entry.get().strip()
+        if top_n_text:
+            try:
+                top_n = int(top_n_text)
+                if top_n > 0:
+                    processed_results = processed_results[:top_n]
+            except ValueError:
+                raise ValueError("Top N must be a positive integer.")
+
+        return processed_results
+
     def _format_analysis_results(self, motifs, segment_length, results):
         selected_motif = self.last_selected_motif or motifs[0]
         extended_stats = self._build_extended_sequence_statistics(
@@ -608,7 +635,8 @@ class App:
             motifs, segment_length = self._get_motifs_and_segment_length()
             self._validate_analysis_inputs(motifs, self.sequence)
             results = self._prepare_analysis_results(motifs, segment_length)
-            final_text = self._format_analysis_results(motifs, segment_length, results)
+            display_results = self._filter_and_sort_results(results)
+            final_text = self._format_analysis_results(motifs, segment_length, display_results)
             self._save_analysis_history(motifs, segment_length, results)
             self._display_results("Analysis Results", final_text)
             self._update_action_buttons_state()
@@ -634,6 +662,32 @@ class App:
             self._validate_analysis_inputs(motifs, self.sequence)
             self._validate_analysis_inputs(motifs, self.sequence_2)
             self._prepare_comparison_results(motifs)
+            if self.only_found_var.get():
+                self.last_comparison_df = self.last_comparison_df[
+                    (self.last_comparison_df["sequence_1_count"] > 0) |
+                    (self.last_comparison_df["sequence_2_count"] > 0)
+                ]
+
+            sort_mode = self.sort_results_var.get()
+            if sort_mode == "count_desc":
+                self.last_comparison_df = self.last_comparison_df.sort_values(
+                    by=["sequence_1_count", "sequence_2_count"],
+                    ascending=False
+                )
+            elif sort_mode == "count_asc":
+                self.last_comparison_df = self.last_comparison_df.sort_values(
+                    by=["sequence_1_count", "sequence_2_count"],
+                    ascending=True
+                )
+
+            top_n_text = self.top_n_entry.get().strip()
+            if top_n_text:
+                try:
+                    top_n = int(top_n_text)
+                    if top_n > 0:
+                        self.last_comparison_df = self.last_comparison_df.head(top_n)
+                except ValueError:
+                    raise ValueError("Top N must be a positive integer.")
             final_text = self._format_comparison_results(motifs)
             self._save_comparison_history(motifs)
             self._display_results("Comparison Results", final_text)
