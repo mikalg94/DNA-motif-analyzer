@@ -1105,10 +1105,14 @@ class App:
         try:
             self._set_status("Generating interactive motif plot...")
             os.makedirs("results", exist_ok=True)
+
             output_html = interactive_motif_positions(
                 self.last_results,
                 len(self.last_analyzed_sequence)
             )
+
+            absolute_html_path = os.path.abspath(output_html)
+            file_url = f"file:///{absolute_html_path.replace(os.sep, '/')}"
 
             info_window = tk.Toplevel(self.root)
             info_window.title("Interactive Motif Plot")
@@ -1124,7 +1128,7 @@ class App:
 
             label2 = tk.Label(
                 info_window,
-                text=f"Saved file:\n{output_html}",
+                text=f"Saved file:\n{absolute_html_path}",
                 wraplength=550,
                 justify="center"
             )
@@ -1133,12 +1137,13 @@ class App:
             open_button = tk.Button(
                 info_window,
                 text="Open in browser",
-                command=lambda: webbrowser.open(output_html),
+                command=lambda: webbrowser.open(file_url),
                 width=20
             )
             open_button.pack(pady=10)
 
             self._set_status("Interactive motif plot generated")
+
         except Exception as e:
             self._set_status("Failed to generate interactive plot")
             messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
