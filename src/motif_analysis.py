@@ -65,8 +65,7 @@ def count_motif_in_segments(sequence, motif, segment_length=10):
 
     return counts
 
-
-def build_statistics_dataframe(sequence, motif, segment_length=10):
+def build_statistics_dataframe(sequence, motif, segment_length=10, mode="start"):
     segments = segment_sequence(sequence, segment_length)
     motif_positions = find_motif_positions(sequence, motif)
     motif_counts = count_motif_in_segments(sequence, motif, segment_length)
@@ -78,10 +77,17 @@ def build_statistics_dataframe(sequence, motif, segment_length=10):
         start = i * segment_length
         end = start + len(segment) - 1
 
-        segment_positions = [
-            pos for pos in motif_positions
-            if start <= pos <= end
-        ]
+        if mode == "start":
+            segment_positions = [
+                pos for pos in motif_positions
+                if start <= pos <= end
+            ]
+        else:  # full containment
+            motif_len = len(motif)
+            segment_positions = [
+                pos for pos in motif_positions
+                if start <= pos and (pos + motif_len - 1) <= end
+            ]
 
         data.append({
             "segment_id": i + 1,

@@ -153,6 +153,20 @@ def build_analysis_frame(app):
     )
     app.analysis_frame.pack(fill="x", padx=0, pady=5)
 
+    app.segment_mode_var = tk.StringVar(value="start")
+
+    app.segment_mode_label = ttk.Label(app.analysis_frame, text="Motif assignment mode:")
+    app.segment_mode_label.pack(pady=3, anchor="w")
+
+    app.segment_mode_combobox = ttk.Combobox(
+        app.analysis_frame,
+        textvariable=app.segment_mode_var,
+        values=["start", "full"],
+        state="readonly",
+        width=17
+    )
+    app.segment_mode_combobox.pack(pady=3, fill="x")
+
     app.motif_label = ttk.Label(
         app.analysis_frame,
         text="Enter motifs separated by commas:"

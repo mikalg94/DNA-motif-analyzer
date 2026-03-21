@@ -182,3 +182,18 @@ Projekt wykonany w ramach projektu zaliczeniowego.
 git add README.md
 git commit -m "Finalna wersja README z pełną dokumentacją projektu"
 git push
+
+### Segmentacja sekwencji
+
+Motywy przypisywane są do segmentów na podstawie:
+
+- pozycji startowej (domyślnie),
+- lub pełnego zawarcia w segmencie.
+
+Opcja ta może być wybrana w ustawieniach analizy.
+
+### Uwagi dotyczące statystyk
+
+Statystyki segmentowe bazują na pozycji startowej motywu lub pełnym jego zawarciu w segmencie (zależnie od wybranej opcji).
+
+W przypadku dłuższych motywów może to wpływać na przypisanie ich do segmentów.

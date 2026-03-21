@@ -20,7 +20,8 @@ def fetch_sequence_from_ncbi(accession_id, email):
             db="nucleotide",
             id=accession_id,
             rettype="fasta",
-            retmode="text"
+            retmode="text",
+            timeout=10
         )
 
         fasta_data = handle.read()
@@ -36,4 +37,13 @@ def fetch_sequence_from_ncbi(accession_id, email):
         return sequence
 
     except Exception as e:
-        raise RuntimeError(f"NCBI download failed: {e}")
+        error_msg = str(e).lower()
+
+        if "not found" in error_msg or "id" in error_msg:
+            raise RuntimeError("Invalid accession ID or sequence not found in NCBI.")
+        elif "timeout" in error_msg:
+            raise RuntimeError("Connection timeout. Please check your internet connection.")
+        elif "http" in error_msg or "url" in error_msg:
+            raise RuntimeError("NCBI server error or connection problem.")
+        else:
+            raise RuntimeError(f"NCBI download failed: {e}")

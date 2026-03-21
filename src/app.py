@@ -338,10 +338,14 @@ class App:
         segment_length = self._get_segment_length()
 
         self.last_selected_motif = motif
+
+        mode = self.segment_mode_var.get()
+
         self.last_statistics_df = build_statistics_dataframe(
             self.sequence,
             motif,
-            segment_length
+            segment_length,
+            mode=mode
         )
 
     def _prepare_selected_motif_statistics(self):
