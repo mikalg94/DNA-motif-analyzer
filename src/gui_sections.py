@@ -419,6 +419,13 @@ def build_actions_frame(app):
     )
     app.show_history_button.pack(pady=3)
 
+    app.toggle_theme_button = ttk.Button(
+        app.other_actions_frame,
+        text="Toggle Theme",
+        command=app.toggle_theme,
+        width=28
+    )
+    app.toggle_theme_button.pack(pady=3)
 
 def build_results_frame(app):
     app.result_container = ttk.LabelFrame(
