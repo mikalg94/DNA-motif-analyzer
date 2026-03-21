@@ -1,6 +1,6 @@
 # 🧬 DNA Motif Analyzer
 
-Aplikacja w Pythonie do analizy sekwencji DNA i wyszukiwania motywów takich jak **ATG, TATA, CGCG** oraz motywów z symbolami **IUPAC**.
+Aplikacja w Pythonie do analizy sekwencji DNA i wyszukiwania motywów takich jak **ATG, TATA, CGCG** oraz motywów zawierających symbole **IUPAC**.
 
 Projekt realizuje zarówno wariant minimalny, jak i rozszerzony projektu zaliczeniowego.
 
@@ -8,72 +8,101 @@ Projekt realizuje zarówno wariant minimalny, jak i rozszerzony projektu zalicze
 
 # 📌 Opis projektu
 
-Aplikacja umożliwia:
+Aplikacja umożliwia analizę sekwencji DNA w dwóch trybach:
+- **GUI** (interfejs graficzny oparty o Tkinter),
+- **CLI** (uruchamianie z terminala).
 
-## ✅ Wariant minimalny
-- wczytywanie sekwencji DNA z plików **TXT / FASTA / FA**
-- wyszukiwanie motywów i ich pozycji
-- zliczanie liczby wystąpień
-- segmentację sekwencji (NumPy / Pandas)
-- analizę statystyczną
-- wizualizację (wykres słupkowy)
+Program pozwala:
+- wczytać sekwencję z pliku,
+- pobrać sekwencję z bazy NCBI,
+- wyszukiwać jeden lub wiele motywów,
+- analizować ich rozmieszczenie w segmentach,
+- porównywać dwie sekwencje,
+- eksportować wyniki do plików.
+
+---
+
+# ✅ Spełnienie założeń projektu
+
+## Wariant minimalny
+- wczytanie sekwencji z pliku **FASTA / TXT / FA**
+- wyszukiwanie jednego motywu i jego pozycji
+- obliczanie liczby wystąpień
+- segmentacja sekwencji z użyciem **NumPy / Pandas**
+- wizualizacja rozmieszczenia motywów na wykresie słupkowym
 - GUI do wyboru pliku i motywu
 - eksport wyników do **CSV**
 
-## 🚀 Wariant rozszerzony
-- pobieranie sekwencji z **NCBI (GenBank API – Biopython)**
+## Wariant rozszerzony
+- pobieranie sekwencji z **NCBI** przez **Entrez API (Biopython)**
 - obsługa wielu motywów jednocześnie
 - porównanie dwóch sekwencji
-- interaktywna wizualizacja (Plotly – HTML)
-- eksport:
-  - CSV
-  - PDF (raport)
-  - JSON (sesja)
+- interaktywna wizualizacja rozmieszczenia motywów (**Plotly / HTML**)
+- eksport rozszerzony:
+  - **CSV**
+  - **PDF**
+  - **JSON**
 - dodatkowe statystyki:
-  - GC-content
-  - AT-content
-  - gęstość motywów
+  - **GC-content**
+  - **AT-content**
+  - **gęstość motywów**
+  - **średnia liczba motywów na segment**
 - historia analiz
-- tryb CLI (bez GUI)
-- obsługa symboli IUPAC (np. N, R, Y)
+- tryb CLI
 
 ---
 
 # 🧠 Funkcjonalności biologiczne
 
-### 🔬 Obsługa motywów IUPAC
-Motywy mogą zawierać symbole:
-A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N
+## 🔬 Obsługa motywów IUPAC
 
-Np.:
-- ATN → AT + dowolna baza
-- AR → A + (A lub G)
+Motywy mogą zawierać symbole:
+`A, C, G, T, R, Y, S, W, K, M, B, D, H, V, N`
+
+Przykłady:
+- `ATN` → `AT` + dowolna baza
+- `AR` → `A` + (`A` lub `G`)
+
+## Ważna uwaga o interpretacji IUPAC
+
+W aplikacji **symbole IUPAC są interpretowane aktywnie w motywie**, natomiast **symbole niejednoznaczne występujące w samej sekwencji są traktowane dosłownie**.
+
+To oznacza, że:
+- motyw `ATN` dopasuje np. `ATA`, `ATC`, `ATG`, `ATT`,
+- ale sekwencja zawierająca symbole takie jak `R`, `Y`, `S` nie jest rozwijana do wszystkich możliwych wariantów.
+
+Takie rozwiązanie upraszcza implementację i jest wystarczające dla celów projektu, ale może wpływać na wyniki dla sekwencji zawierających wiele symboli niejednoznacznych.
 
 ---
 
-### 📊 Segmentacja sekwencji
+# 📊 Segmentacja sekwencji
 
 Motywy przypisywane są do segmentów na podstawie:
-- pozycji startowej (domyślnie)
-- lub pełnego zawarcia w segmencie
+- pozycji startowej motywu (`start`) — domyślnie,
+- lub pełnego zawarcia motywu w segmencie (`full`).
 
 ---
 
-### ⚠️ Uwagi
-- motywy nakładające się są wykrywane poprawnie
-- sekwencje mogą zawierać symbole niejednoznaczne (IUPAC)
-- analiza działa na dopasowaniu regex (motyw → sekwencja)
+# ⚠️ Dodatkowe uwagi
+
+- motywy nakładające się są wykrywane poprawnie,
+- sekwencje mogą zawierać symbole niejednoznaczne IUPAC,
+- analiza działa na dopasowaniu regex generowanym z motywu,
+- GUI i logika analizy są rozdzielone na osobne moduły,
+- logika aplikacji została pokryta testami jednostkowymi.
 
 ---
 
 # 🧱 Struktura projektu
 
+```text
 dna_motif_analyzer_project
 │
 ├── main.py
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
+├── pytest.ini
 │
 ├── src
 │   ├── __init__.py
@@ -90,23 +119,24 @@ dna_motif_analyzer_project
 │   └── example_sequence.fasta
 │
 ├── results
-│   ├── interactive_motif_positions.html
-│   └── .gitkeep
+│   ├── .gitkeep
+│   └── interactive_motif_positions.html
 │
 └── tests
-    ├── test_io_utils.py
-    ├── test_motif_analysis.py
-    ├── test_validation_utils.py
     ├── test_export_utils.py
-    └── test_ncbi_utils.py
-
+    ├── test_io_utils.py
+    ├── test_main.py
+    ├── test_motif_analysis.py
+    ├── test_ncbi_utils.py
+    └── test_validation_utils.py
+```
 ---
 
 # 🚀 Instalacja i uruchomienie
 
 ## 1. Klonowanie repozytorium
 ```
-git clone https://github.com/mikalg94.git
+git clone https://github.com/mikalg94/DNA-motif-analyzer.git
 cd dna_motif_analyzer_project
 ```
 ## 2. Środowisko wirtualne
@@ -137,30 +167,55 @@ python main.py
 ```
 python main.py --file data/example_sequence.fasta --motifs ATG,TATA --segment 10
 ```
----
+### Ważna uwaga o CLI
+
+Jeżeli użytkownik uruchamia program z argumentami CLI, musi podać jednocześnie:
+
+--file
+
+--motifs
+
+#### W przeciwnym razie program zwróci błąd parsera zamiast uruchamiać GUI.
+
+
 
 # 🧪 Testy
 ```
 pytest
 ```
+
+### Testy obejmują:
+
+- wczytywanie danych,
+- walidację sekwencji i motywów,
+- analizę motywów,
+- eksport wyników,
+- logikę pobierania danych z NCBI,
+- zachowanie trybu CLI.
 ---
 
 # 📊 Wizualizacje
 
-Aplikacja oferuje:
-- wykres rozmieszczenia motywów
-- wykres pozycji motywów
-- wykres GC-content
-- porównanie GC między sekwencjami
-- interaktywny wykres HTML (Plotly)
+### Aplikacja oferuje:
+
+- wykres rozmieszczenia motywu w segmentach,
+- wykres pozycji motywów na osi sekwencji,
+- wykres zbiorczy dla wielu motywów,
+- wykres GC-content,
+- porównanie GC-content dla dwóch sekwencji,
+- wykres interaktywny HTML (Plotly),
+- podświetlanie motywów bezpośrednio w sekwencji.
 
 ---
 
 # 📦 Eksport danych
 
-- CSV – tabela wyników
-- JSON – cała sesja analizy
-- PDF – raport z wykresami
+### Program pozwala eksportować:
+
+- CSV – tabela wyników,
+- JSON – zapis sesji analizy,
+- PDF – raport z podsumowaniem i wykresami,
+- PNG – zapis wykresu.
 
 ---
 
@@ -180,4 +235,4 @@ Aplikacja oferuje:
 # 🧑‍💻 Autor
 ## Michał Grzybała
 
-Projekt wykonany w ramach projektu zaliczeniowego.
+### Projekt wykonany w ramach pracy zaliczeniowej.
