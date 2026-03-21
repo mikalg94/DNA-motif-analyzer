@@ -293,14 +293,14 @@ class App:
             accession_id = "NC_012920"
             email = "test@test.com"
 
-            self.sequence = fetch_sequence_from_ncbi(accession_id, email)
-            self.file_label.config(text=f"Loaded example from NCBI: {accession_id}")
+            self.sequence_2 = fetch_sequence_from_ncbi(accession_id, email)
+            self.file_label_2.config(text=f"Loaded example from NCBI: {accession_id}")
 
             messagebox.showinfo(
                 "Success",
-                f"Example sequence loaded successfully.\n"
+                f"Second example sequence loaded successfully.\n"
                 f"Accession: {accession_id}\n"
-                f"Length: {len(self.sequence)}"
+                f"Length: {len(self.sequence_2)}"
             )
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load example: {e}")
