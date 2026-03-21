@@ -344,6 +344,14 @@ def build_actions_frame(app):
     )
     app.export_csv_button.pack(pady=3)
 
+    app.export_json_button = tk.Button(
+        app.export_actions_frame,
+        text="Export JSON",
+        command=app.export_json,
+        width=25
+    )
+    app.export_json_button.pack(pady=3)
+
     app.save_plot_button = tk.Button(
         app.export_actions_frame,
         text="Save Plot as PNG",

@@ -17,6 +17,7 @@ from src.export_utils import (
     create_gc_motif_overlay_figure,
     export_report_to_pdf,
     export_results_to_csv,
+    export_session_to_json,
     interactive_motif_positions,
     plot_motif_distribution,
     save_analysis_history,
@@ -90,7 +91,9 @@ class App:
         self.compare_button.config(
             state="normal" if has_sequence_1 and has_sequence_2 else "disabled"
         )
-
+        self.export_json_button.config(
+            state="normal" if has_any_export_data or has_analysis_results else "disabled"
+        )
         self.export_csv_button.config(
             state="normal" if has_any_export_data else "disabled"
         )
@@ -696,6 +699,56 @@ class App:
         except Exception as e:
             self._set_status("Comparison failed")
             messagebox.showerror("Error", f"Comparison failed: {e}")
+
+    def _build_session_data(self):
+        session_data = {
+            "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "sequence_1_length": len(self.sequence) if self.sequence else 0,
+            "sequence_2_length": len(self.sequence_2) if self.sequence_2 else 0,
+            "file_path_1": self.file_path,
+            "file_path_2": self.file_path_2,
+            "selected_motif": self.last_selected_motif,
+            "analysis_results": self.last_results,
+            "statistics_dataframe": (
+                self.last_statistics_df.to_dict(orient="records")
+                if self.last_statistics_df is not None else []
+            ),
+            "comparison_results": (
+                self.last_comparison_df.to_dict(orient="records")
+                if self.last_comparison_df is not None else []
+            ),
+        }
+
+        return session_data
+
+    def export_json(self):
+        if (
+            not self.last_results and
+            self.last_statistics_df is None and
+            self.last_comparison_df is None
+        ):
+            self._set_status("JSON export failed")
+            messagebox.showerror("Error", "No analysis session available for export.")
+            return
+
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")]
+        )
+
+        if not output_path:
+            self._set_status("Ready")
+            return
+
+        try:
+            self._set_status("Exporting JSON session...")
+            session_data = self._build_session_data()
+            export_session_to_json(session_data, output_path)
+            self._set_status("JSON session exported")
+            messagebox.showinfo("Success", f"JSON session exported to:\n{output_path}")
+        except Exception as e:
+            self._set_status("JSON export failed")
+            messagebox.showerror("Error", f"Failed to export JSON: {e}")
 
     def export_csv(self):
         if self.last_statistics_df is None and self.last_comparison_df is None:

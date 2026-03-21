@@ -2,9 +2,14 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
+import json
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from datetime import datetime
+
+def export_session_to_json(session_data, output_path):
+    with open(output_path, "w", encoding="utf-8") as json_file:
+        json.dump(session_data, json_file, indent=4, ensure_ascii=False)
 
 def create_motif_distribution_figure(df, motif):
     fig = Figure(figsize=(8, 5))
