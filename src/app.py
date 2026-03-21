@@ -32,6 +32,7 @@ from src.motif_analysis import (
     analyze_multiple_motifs,
     build_statistics_dataframe,
     compare_sequences,
+    calculate_gc_content,
 )
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import (
@@ -315,6 +316,7 @@ class App:
         output = [
             "ANALYSIS RESULTS\n",
             f"Sequence length: {len(self.sequence)}",
+            f"GC content: {calculate_gc_content(self.sequence)}%",
             f"Recognized motifs: {', '.join(motifs)}",
             f"Segment length: {segment_length}\n",
         ]

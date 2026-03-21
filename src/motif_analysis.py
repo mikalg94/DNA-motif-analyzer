@@ -45,6 +45,7 @@ def build_statistics_dataframe(sequence, motif, segment_length=10):
     segments = segment_sequence(sequence, segment_length)
     motif_positions = find_motif_positions(sequence, motif)
     motif_counts = count_motif_in_segments(sequence, motif, segment_length)
+    gc_values = calculate_gc_content_per_segment(sequence, segment_length)
 
     data = []
 
@@ -63,7 +64,8 @@ def build_statistics_dataframe(sequence, motif, segment_length=10):
             "end": end,
             "segment_length": len(segment),
             "motif_count": motif_counts[i],
-            "motif_positions": ", ".join(map(str, segment_positions)) if segment_positions else ""
+            "motif_positions": ", ".join(map(str, segment_positions)) if segment_positions else "",
+            "gc_content": gc_values[i],
         })
 
     df = pd.DataFrame(data)
@@ -115,3 +117,28 @@ def compare_sequences(sequence1, sequence2, motifs):
             })
 
     return pd.DataFrame(comparison_data)
+
+def calculate_gc_content(sequence):
+    if not sequence:
+        return 0.0
+
+    sequence = sequence.upper()
+    gc_count = sequence.count("G") + sequence.count("C")
+
+    return round((gc_count / len(sequence)) * 100, 3)
+
+
+def calculate_gc_content_per_segment(sequence, segment_length=10):
+    segments = segment_sequence(sequence, segment_length)
+    gc_values = []
+
+    for segment in segments:
+        if not segment:
+            gc_values.append(0.0)
+            continue
+
+        gc_count = segment.count("G") + segment.count("C")
+        gc_percent = (gc_count / len(segment)) * 100
+        gc_values.append(round(gc_percent, 3))
+
+    return gc_values
