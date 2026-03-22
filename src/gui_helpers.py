@@ -5,11 +5,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 
 def show_info(title, message):
-    show_info(title, message)
+    messagebox.showinfo(title, message)
 
 
 def show_error(title, message):
-    show_error(title, message)
+    messagebox.showerror(title, message)
 
 
 def show_warning(title, message):
@@ -17,7 +17,7 @@ def show_warning(title, message):
 
 
 def ask_save_as_filename(defaultextension, filetypes):
-    return ask_save_as_filename(
+    return filedialog.asksaveasfilename(
         defaultextension=defaultextension,
         filetypes=filetypes,
     )
@@ -40,6 +40,7 @@ def open_figure_window(root, title, fig):
     toolbar.update()
 
     return plot_window
+
 
 def ask_open_sequence_filename():
     return filedialog.askopenfilename(
