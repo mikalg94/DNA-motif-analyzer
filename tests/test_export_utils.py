@@ -4,11 +4,11 @@ import tempfile
 import pandas as pd
 
 from src.export_utils import (
-    plot_motif_positions,
     export_comparison_report_to_pdf,
     export_report_to_pdf,
     export_results_to_csv,
     interactive_motif_positions,
+    plot_motif_positions,
     save_analysis_history,
 )
 
