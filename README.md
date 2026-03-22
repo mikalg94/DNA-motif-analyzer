@@ -215,4 +215,12 @@ dna_motif_analyzer_project
 
 # 👨‍💻 Autor
 
-Michał Grzybała
+### Michał Grzybała
+
+---
+
+## ⭐ Status projektu
+
+Projekt ukończony w ramach pracy zaliczeniowej i rozwinięty o dodatkowe funkcjonalności oraz refaktoryzację architektury.
+
+---
