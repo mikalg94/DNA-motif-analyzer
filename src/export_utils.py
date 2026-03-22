@@ -350,3 +350,74 @@ def save_analysis_history(entry, output_path="results/analysis_history.csv"):
         updated_df = new_row
 
     updated_df.to_csv(output_path, index=False)
+
+def export_comparison_report_to_pdf(comparison_df, output_path):
+    with PdfPages(output_path) as pdf:
+        fig, ax = plt.subplots(figsize=(8.27, 11.69))
+        ax.axis("off")
+
+        summary_lines = [
+            "DNA Motif Analyzer - Comparison Report",
+            "",
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Number of compared motifs: {len(comparison_df)}",
+            "",
+            "Report contents:",
+            "- Summary page",
+            "- Comparison table",
+            "- Motif count comparison chart",
+        ]
+
+        ax.text(
+            0.05,
+            0.95,
+            "\n".join(summary_lines),
+            fontsize=11,
+            va="top"
+        )
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        fig, ax = plt.subplots(figsize=(11.69, 8.27))
+        ax.axis("off")
+
+        table_df = comparison_df.copy()
+
+        table = ax.table(
+            cellText=table_df.values,
+            colLabels=table_df.columns,
+            loc="center"
+        )
+
+        table.auto_set_font_size(False)
+        table.set_fontsize(8)
+        table.scale(1, 1.4)
+
+        ax.set_title("Sequence comparison table", pad=20)
+        plt.tight_layout()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        if not comparison_df.empty:
+            fig, ax = plt.subplots(figsize=(10, 5))
+
+            motifs = comparison_df["motif"]
+            seq1_counts = comparison_df["sequence_1_count"]
+            seq2_counts = comparison_df["sequence_2_count"]
+
+            x = range(len(motifs))
+            width = 0.35
+
+            ax.bar([i - width / 2 for i in x], seq1_counts, width=width, label="Sequence 1")
+            ax.bar([i + width / 2 for i in x], seq2_counts, width=width, label="Sequence 2")
+
+            ax.set_xticks(list(x))
+            ax.set_xticklabels(motifs)
+            ax.set_xlabel("Motif")
+            ax.set_ylabel("Count")
+            ax.set_title("Motif count comparison")
+            ax.legend()
+
+            plt.tight_layout()
+            pdf.savefig(fig)
+            plt.close(fig)

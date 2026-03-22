@@ -339,6 +339,14 @@ def build_actions_frame(app):
     )
     app.show_positions_button.pack(pady=3)
 
+    app.save_positions_plot_button = ttk.Button(
+        app.visualization_actions_frame,
+        text="Save Positions Plot as PNG",
+        command=app.save_positions_plot,
+        width=28
+    )
+    app.save_positions_plot_button.pack(pady=3)
+
     app.show_highlighted_sequence_button = ttk.Button(
         app.visualization_actions_frame,
         text="Show Highlighted Sequence",

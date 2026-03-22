@@ -15,11 +15,13 @@ from src.export_utils import (
     create_motif_distribution_figure,
     create_motif_positions_figure,
     create_multiple_motifs_summary_figure,
+    export_comparison_report_to_pdf,
     export_report_to_pdf,
     export_results_to_csv,
     export_session_to_json,
     interactive_motif_positions,
     plot_motif_distribution,
+    plot_motif_positions,
     save_analysis_history,
 )
 from src.gui_sections import (
@@ -85,6 +87,9 @@ class App:
 
         self._configure_styles()
         self._update_action_buttons_state()
+
+        self.progress_window = None
+        self.progress_bar = None
 
     def _configure_styles(self):
         style = ttk.Style()
@@ -175,6 +180,9 @@ class App:
         self.save_plot_button.config(
             state="normal" if has_analysis_results else "disabled"
         )
+        self.save_positions_plot_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
         self.export_pdf_button.config(
             state="normal" if has_analysis_results else "disabled"
         )
@@ -237,7 +245,48 @@ class App:
         self.example_button.config(state=state)
         self.example_button_2.config(state=state)
 
+    def _show_progress_dialog(self, title="Please wait", message="Operation in progress..."):
+        if hasattr(self, "progress_window") and self.progress_window is not None:
+            return
+
+        self.progress_window = tk.Toplevel(self.root)
+        self.progress_window.title(title)
+        self.progress_window.geometry("350x120")
+        self.progress_window.resizable(False, False)
+        self.progress_window.transient(self.root)
+        self.progress_window.grab_set()
+
+        label = ttk.Label(self.progress_window, text=message, anchor="center")
+        label.pack(pady=(20, 10), padx=20)
+
+        self.progress_bar = ttk.Progressbar(
+            self.progress_window,
+            mode="indeterminate",
+            length=280
+        )
+        self.progress_bar.pack(pady=10, padx=20)
+        self.progress_bar.start(10)
+
+        self.progress_window.protocol("WM_DELETE_WINDOW", lambda: None)
+
+    def _close_progress_dialog(self):
+        if hasattr(self, "progress_bar") and self.progress_bar is not None:
+            try:
+                self.progress_bar.stop()
+            except Exception:
+                pass
+            self.progress_bar = None
+
+        if hasattr(self, "progress_window") and self.progress_window is not None:
+            try:
+                self.progress_window.grab_release()
+            except Exception:
+                pass
+            self.progress_window.destroy()
+            self.progress_window = None
+
     def _handle_ncbi_success(self, target, accession_id, sequence, description=None, is_example=False):
+        self._close_progress_dialog()
         self._show_sequence_warning_if_needed(sequence)
 
         if is_example:
@@ -264,6 +313,7 @@ class App:
         self._set_status("Sequence downloaded successfully")
 
     def _handle_ncbi_error(self, error_message):
+        self._close_progress_dialog()
         self._set_ncbi_buttons_state("normal")
         self._update_action_buttons_state()
         self._set_status("NCBI download failed")
@@ -350,6 +400,10 @@ class App:
 
         self._set_status("Downloading sequence from NCBI...")
         self._set_ncbi_buttons_state("disabled")
+        self._show_progress_dialog(
+            title="Downloading from NCBI",
+            message="Downloading sequence from NCBI. Please wait..."
+        )
 
         thread = threading.Thread(
             target=self._fetch_from_ncbi_worker,
@@ -361,6 +415,10 @@ class App:
     def load_example_ncbi(self, target, accession_id, description):
         self._set_status("Downloading example sequence from NCBI...")
         self._set_ncbi_buttons_state("disabled")
+        self._show_progress_dialog(
+            title="Downloading example",
+            message="Downloading example sequence from NCBI. Please wait..."
+        )
 
         thread = threading.Thread(
             target=self._load_example_ncbi_worker,
@@ -874,6 +932,35 @@ class App:
             ),
         }
 
+    def save_positions_plot(self):
+        if not self.last_results or not self.last_analyzed_sequence:
+            self._set_status("No motif analysis results available")
+            messagebox.showerror("Error", "No motif analysis results available.")
+            return
+
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png")]
+        )
+
+        if not output_path:
+            self._set_status("Ready")
+            return
+
+        try:
+            self._set_status("Saving motif positions plot as PNG...")
+            plot_motif_positions(
+                self.last_results,
+                len(self.last_analyzed_sequence),
+                output_path=output_path,
+                show_plot=False
+            )
+            self._set_status("Motif positions plot saved as PNG")
+            messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
+        except Exception as e:
+            self._set_status("Failed to save positions plot")
+            messagebox.showerror("Error", f"Failed to save positions plot: {e}")
+
     def export_json(self):
         if (
             not self.last_results and
@@ -1189,6 +1276,13 @@ class App:
             messagebox.showerror("Error", f"Failed to save plot: {e}")
 
     def export_pdf(self):
+        if self.last_comparison_df is None and (
+            not self.last_results or self.last_statistics_df is None
+        ):
+            self._set_status("PDF export failed")
+            messagebox.showerror("Error", "No analysis or comparison results available.")
+            return
+
         output_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")]
@@ -1200,13 +1294,21 @@ class App:
 
         try:
             self._set_status("Generating PDF...")
-            self._prepare_selected_motif_statistics()
-            export_report_to_pdf(
-                self.last_statistics_df,
-                self.last_selected_motif,
-                len(self.last_analyzed_sequence),
-                output_path
-            )
+
+            if self.last_comparison_df is not None:
+                export_comparison_report_to_pdf(
+                    self.last_comparison_df,
+                    output_path
+                )
+            else:
+                self._prepare_selected_motif_statistics()
+                export_report_to_pdf(
+                    self.last_statistics_df,
+                    self.last_selected_motif,
+                    len(self.last_analyzed_sequence),
+                    output_path
+                )
+
             self._set_status("PDF exported")
             messagebox.showinfo("Success", f"PDF report exported to:\n{output_path}")
         except Exception as e:

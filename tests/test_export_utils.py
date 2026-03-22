@@ -4,6 +4,8 @@ import tempfile
 import pandas as pd
 
 from src.export_utils import (
+    plot_motif_positions,
+    export_comparison_report_to_pdf,
     export_report_to_pdf,
     export_results_to_csv,
     interactive_motif_positions,
@@ -121,6 +123,66 @@ def test_export_report_to_pdf_creates_file():
             motif="ATG",
             sequence_length=20,
             output_path=output_path,
+        )
+
+        assert os.path.exists(output_path)
+        assert os.path.getsize(output_path) > 0
+    finally:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
+def test_export_comparison_report_to_pdf_creates_file():
+    df = pd.DataFrame(
+        [
+            {
+                "motif": "ATG",
+                "sequence_1_length": 50,
+                "sequence_2_length": 60,
+                "sequence_1_count": 3,
+                "sequence_2_count": 5,
+                "sequence_1_per_1000_nt": 60.0,
+                "sequence_2_per_1000_nt": 83.333,
+                "count_difference": -2,
+            },
+            {
+                "motif": "TATA",
+                "sequence_1_length": 50,
+                "sequence_2_length": 60,
+                "sequence_1_count": 1,
+                "sequence_2_count": 2,
+                "sequence_1_per_1000_nt": 20.0,
+                "sequence_2_per_1000_nt": 33.333,
+                "count_difference": -1,
+            },
+        ]
+    )
+
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
+        output_path = temp_file.name
+
+    try:
+        export_comparison_report_to_pdf(df, output_path)
+        assert os.path.exists(output_path)
+        assert os.path.getsize(output_path) > 0
+    finally:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
+def test_plot_motif_positions_saves_png():
+    results = [
+        {"motif": "ATG", "count": 2, "positions": [0, 6]},
+        {"motif": "TATA", "count": 1, "positions": [15]},
+    ]
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+        output_path = temp_file.name
+
+    try:
+        plot_motif_positions(
+            results,
+            sequence_length=30,
+            output_path=output_path,
+            show_plot=False
         )
 
         assert os.path.exists(output_path)

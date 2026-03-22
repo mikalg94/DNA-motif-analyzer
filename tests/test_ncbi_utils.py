@@ -44,3 +44,12 @@ def test_fetch_sequence_from_ncbi_empty_response(monkeypatch):
 
     with pytest.raises(RuntimeError, match="NCBI download failed"):
         fetch_sequence_from_ncbi("TEST123", "test@example.com")
+
+def test_fetch_sequence_from_ncbi_timeout(monkeypatch):
+    def mock_efetch(db, id, rettype, retmode, **kwargs):
+        raise Exception("timeout while connecting")
+
+    monkeypatch.setattr("src.ncbi_utils.Entrez.efetch", mock_efetch)
+
+    with pytest.raises(RuntimeError, match="Connection timeout"):
+        fetch_sequence_from_ncbi("TEST123", "test@example.com")
