@@ -34,17 +34,6 @@ from src.gui_sections import (
     build_title,
 )
 from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
-from src.motif_analysis import (
-    analyze_multiple_motifs,
-    build_statistics_dataframe,
-    calculate_at_content,
-    calculate_average_motifs_per_segment,
-    calculate_gc_content,
-    calculate_motif_density_per_1000_nt,
-    compare_sequences,
-    count_unknown_bases,
-    get_segment_with_max_motifs,
-)
 from src.ncbi_utils import fetch_sequence_from_ncbi
 from src.validation_utils import (
     get_sequence_warning,
@@ -61,6 +50,13 @@ from src.report_utils import (
 from src.history_utils import (
     build_analysis_history_entry,
     build_comparison_history_entry,
+)
+
+from src.analysis_service import (
+    build_extended_sequence_statistics,
+    build_motif_statistics,
+    run_sequence_analysis,
+    run_sequence_comparison,
 )
 
 class App:
@@ -549,11 +545,11 @@ class App:
 
         mode = self.segment_mode_var.get()
 
-        self.last_statistics_df = build_statistics_dataframe(
+        self.last_statistics_df = build_motif_statistics(
             self.last_analyzed_sequence,
             motif,
             segment_length,
-            mode=mode
+            mode=mode,
         )
 
     def _prepare_selected_motif_statistics(self):
@@ -602,18 +598,18 @@ class App:
             segment_length = self._get_segment_length()
             mode = self.segment_mode_var.get()
 
-            df1 = build_statistics_dataframe(
+            df1 = build_motif_statistics(
                 self.sequence,
                 self.last_selected_motif or "ATG",
                 segment_length,
-                mode=mode
+                mode=mode,
             )
 
-            df2 = build_statistics_dataframe(
+            df2 = build_motif_statistics(
                 self.sequence_2,
                 self.last_selected_motif or "ATG",
                 segment_length,
-                mode=mode
+                mode=mode,
             )
 
             fig = create_gc_comparison_figure(df1, df2)
@@ -648,38 +644,12 @@ class App:
             messagebox.showerror("Error", f"Failed to generate overlay plot: {e}")
 
     def _build_extended_sequence_statistics_for_sequence(self, sequence, motif, segment_length, mode):
-        max_segment = get_segment_with_max_motifs(
+        return build_extended_sequence_statistics(
             sequence,
             motif,
             segment_length,
-            mode=mode
+            mode=mode,
         )
-
-        if max_segment is None:
-            max_segment_text = "No segment data available"
-        else:
-            max_segment_text = (
-                f"Segment {max_segment['segment_id']} "
-                f"({max_segment['start']}-{max_segment['end']}), "
-                f"count={max_segment['motif_count']}"
-            )
-
-        return {
-            "gc_content": calculate_gc_content(sequence),
-            "at_content": calculate_at_content(sequence),
-            "unknown_bases": count_unknown_bases(sequence),
-            "motif_density_per_1000_nt": calculate_motif_density_per_1000_nt(
-                sequence,
-                motif
-            ),
-            "average_motifs_per_segment": calculate_average_motifs_per_segment(
-                sequence,
-                motif,
-                segment_length,
-                mode=mode
-            ),
-            "max_segment_text": max_segment_text,
-        }
 
     def _build_extended_sequence_statistics(self, motif, segment_length):
         return self._build_extended_sequence_statistics_for_sequence(
@@ -816,10 +786,10 @@ class App:
         self._display_dataframe_in_table(dataframe)
 
     def _prepare_comparison_results(self, motifs):
-        self.last_comparison_df = compare_sequences(
+        self.last_comparison_df = run_sequence_comparison(
             self.sequence,
             self.sequence_2,
-            motifs
+            motifs,
         )
         return self.last_comparison_df
 
@@ -834,7 +804,7 @@ class App:
             motifs, segment_length = self._get_motifs_and_segment_length()
             self._validate_analysis_inputs(motifs, sequence)
 
-            results = analyze_multiple_motifs(sequence, motifs)
+            results = run_sequence_analysis(sequence, motifs)
             display_results = self._filter_and_sort_results(results)
 
             self._clear_comparison_state()
@@ -847,11 +817,11 @@ class App:
             self.selected_motif_combobox.set(motifs[0])
 
             self.last_selected_motif = motifs[0]
-            self.last_statistics_df = build_statistics_dataframe(
+            self.last_statistics_df = build_motif_statistics(
                 sequence,
                 self.last_selected_motif,
                 segment_length,
-                mode=self.segment_mode_var.get()
+                mode=self.segment_mode_var.get(),
             )
 
             final_text = self._format_analysis_results_for_sequence(
