@@ -5,6 +5,23 @@ import pandas as pd
 import tkinter as tk
 from tkinter import ttk
 
+from src.analysis_handlers import (
+    prepare_sequence_analysis,
+    prepare_sequence_comparison,
+)
+from src.analysis_service import (
+    build_extended_sequence_statistics,
+    build_motif_statistics,
+)
+from src.app_state import AnalysisState, build_sequences_state
+from src.constants import ANALYSIS_HISTORY_PATH, RESULTS_DIR
+from src.export_service import (
+    export_analysis_or_comparison_csv,
+    export_analysis_or_comparison_pdf,
+    export_distribution_plot_png,
+    export_positions_plot_png,
+    export_session_json,
+)
 from src.export_utils import (
     create_gc_comparison_figure,
     create_gc_content_figure,
@@ -14,6 +31,15 @@ from src.export_utils import (
     create_multiple_motifs_summary_figure,
     interactive_motif_positions,
     save_analysis_history,
+)
+from src.gui_helpers import (
+    ask_open_sequence_filename,
+    ask_save_as_filename,
+    get_default_empty_file_label,
+    open_figure_window,
+    show_error,
+    show_info,
+    show_warning,
 )
 from src.gui_sections import (
     build_actions_frame,
@@ -25,68 +51,27 @@ from src.gui_sections import (
     build_status_bar,
     build_title,
 )
-from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
-from src.ncbi_utils import fetch_sequence_from_ncbi
-from src.validation_utils import (
-    get_sequence_warning,
-    normalize_motifs,
-    validate_motifs_against_sequence,
-)
-
-from src.report_utils import (
-    build_session_data,
-    format_analysis_results_for_sequence,
-    format_comparison_results,
-)
-
-from src.history_utils import (
-    build_analysis_history_entry,
-    build_comparison_history_entry,
-)
-
-from src.analysis_service import (
-    build_extended_sequence_statistics,
-    build_motif_statistics,
-    run_sequence_analysis,
-    run_sequence_comparison,
-)
-
-from src.export_service import (
-    export_analysis_or_comparison_csv,
-    export_analysis_or_comparison_pdf,
-    export_distribution_plot_png,
-    export_positions_plot_png,
-    export_session_json,
-)
-
-from src.gui_helpers import (
-    ask_open_sequence_filename,
-    ask_save_as_filename,
-    get_default_empty_file_label,
-    open_figure_window,
-    show_error,
-    show_info,
-    show_warning,
-)
-
-from src.constants import ANALYSIS_HISTORY_PATH, RESULTS_DIR
-
-from src.app_state import build_sequences_state
-
-from src.analysis_handlers import (
-    filter_and_sort_results,
-    prepare_sequence_analysis,
-    prepare_sequence_comparison,
-)
-
 from src.gui_windows import (
     close_progress_dialog,
     create_progress_dialog,
     open_highlighted_sequence_window,
     open_interactive_plot_info_window,
 )
+from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
+from src.ncbi_utils import fetch_sequence_from_ncbi
+from src.report_utils import build_session_data
+from src.validation_utils import (
+    get_sequence_warning,
+    normalize_motifs,
+    validate_motifs_against_sequence,
+)
 
-class App:
+
+class AppController:
+    # =========================
+    # Initialization
+    # =========================
+
     def __init__(self, root):
         self.root = root
         self.root.title("DNA Motif Analyzer")
@@ -94,14 +79,7 @@ class App:
         self.root.resizable(True, True)
 
         self.sequences_state = build_sequences_state()
-
-        self.last_results = []
-        self.last_statistics_df = None
-        self.last_selected_motif = None
-        self.last_comparison_df = None
-
-        self.last_analyzed_sequence = ""
-        self.last_analyzed_sequence_label = ""
+        self.analysis_state = AnalysisState()
 
         self.current_theme = "light"
 
@@ -169,6 +147,61 @@ class App:
         except Exception:
             pass
 
+    # =========================
+    # State helpers
+    # =========================
+
+    def _get_sequence_slot(self, target):
+        try:
+            return self.sequences_state[target]
+        except KeyError as exc:
+            raise ValueError("Target must be 1 or 2.") from exc
+
+    def _get_sequence_by_target(self, target):
+        return self._get_sequence_slot(target).sequence
+
+    def _get_sequence_length_by_target(self, target):
+        return len(self._get_sequence_by_target(target))
+
+    def _get_file_path_by_target(self, target):
+        return self._get_sequence_slot(target).file_path
+
+    def _set_sequence_data(self, target, sequence, source_label):
+        slot = self._get_sequence_slot(target)
+        slot.sequence = sequence
+        slot.source_label = source_label
+
+        label_widget = self._get_sequence_label_widget_by_target(target)
+        label_widget.config(text=source_label)
+
+    def _set_file_path_by_target(self, target, path):
+        self._get_sequence_slot(target).file_path = path
+
+    def _clear_sequence_slot(self, target):
+        slot = self._get_sequence_slot(target)
+        slot.sequence = ""
+        slot.file_path = None
+        slot.source_label = get_default_empty_file_label(target)
+
+        label_widget = self._get_sequence_label_widget_by_target(target)
+        label_widget.config(text=slot.source_label)
+
+    def _clear_single_analysis_state(self):
+        self.analysis_state.last_results = []
+        self.analysis_state.last_statistics_df = None
+        self.analysis_state.last_selected_motif = None
+        self.analysis_state.last_analyzed_sequence = ""
+        self.analysis_state.last_analyzed_sequence_label = ""
+        self.selected_motif_combobox["values"] = []
+        self.selected_motif_combobox.set("")
+
+    def _clear_comparison_state(self):
+        self.analysis_state.last_comparison_df = None
+
+    # =========================
+    # GUI helpers
+    # =========================
+
     def _resize_result_columns(self, event=None):
         columns = self.result_tree["columns"]
         if not columns:
@@ -196,6 +229,13 @@ class App:
         self.root.after(150, self._resize_result_columns)
         self.root.after(300, self._resize_result_columns)
 
+    def _show_figure_window(self, title, fig):
+        open_figure_window(self.root, title, fig)
+
+    def _set_status(self, text):
+        self.status_var.set(text)
+        self.root.update_idletasks()
+
     def toggle_theme(self):
         self.current_theme = "dark" if self.current_theme == "light" else "light"
         self._configure_styles()
@@ -209,9 +249,9 @@ class App:
     def _update_action_buttons_state(self):
         has_sequence_1 = bool(self._get_sequence_by_target(1))
         has_sequence_2 = bool(self._get_sequence_by_target(2))
-        has_analysis_results = bool(self.last_results)
-        has_statistics = self.last_statistics_df is not None
-        has_comparison = self.last_comparison_df is not None
+        has_analysis_results = bool(self.analysis_state.last_results)
+        has_statistics = self.analysis_state.last_statistics_df is not None
+        has_comparison = self.analysis_state.last_comparison_df is not None
         has_any_export_data = has_statistics or has_comparison
 
         self.analyze_button.config(state="normal" if has_sequence_1 else "disabled")
@@ -263,46 +303,41 @@ class App:
             state="normal" if has_analysis_results else "disabled"
         )
 
-    @staticmethod
-    def _load_sequence_from_path(path):
-        lowered = path.lower()
+    def _clear_result_table(self):
+        self.result_tree.delete(*self.result_tree.get_children())
+        self.result_tree["columns"] = ()
 
-        if lowered.endswith(".txt"):
-            return load_sequence_from_txt(path)
-        if lowered.endswith(".fasta") or lowered.endswith(".fa"):
-            return load_sequence_from_fasta(path)
+    def _display_dataframe_in_table(self, df):
+        self._clear_result_table()
 
-        raise ValueError("Unsupported file format. Please choose TXT, FASTA, or FA.")
+        if df is None or df.empty:
+            return
 
-    def _set_sequence_data(self, target, sequence, source_label):
-        slot = self._get_sequence_slot(target)
-        slot.sequence = sequence
-        slot.source_label = source_label
+        columns = list(df.columns)
+        self.result_tree["columns"] = columns
 
-        label_widget = self._get_sequence_label_widget_by_target(target)
-        label_widget.config(text=source_label)
+        for column in columns:
+            self.result_tree.heading(column, text=column)
+            self.result_tree.column(
+                column,
+                width=120,
+                minwidth=100,
+                anchor="center",
+                stretch=True
+            )
 
-    def _get_sequence_by_target(self, target):
-        slot = self._get_sequence_slot(target)
-        return slot.sequence
+        for _, row in df.iterrows():
+            values = [str(value) for value in row.tolist()]
+            self.result_tree.insert("", tk.END, values=values)
 
-    def _get_sequence_length_by_target(self, target):
-        return len(self._get_sequence_by_target(target))
+        self.root.after(50, self._resize_result_columns)
+        self.root.after(150, self._resize_result_columns)
+        self.root.after(300, self._resize_result_columns)
 
-    def _get_ncbi_entry_by_target(self, target):
-        if target == 1:
-            return self.ncbi_entry
-        if target == 2:
-            return self.ncbi_entry_2
-        raise ValueError("Target must be 1 or 2.")
-
-    def _get_file_path_by_target(self, target):
-        slot = self._get_sequence_slot(target)
-        return slot.file_path
-
-    def _set_file_path_by_target(self, target, path):
-        slot = self._get_sequence_slot(target)
-        slot.file_path = path
+    def _display_results(self, content, dataframe=None):
+        self.result_text.delete("1.0", tk.END)
+        self.result_text.insert(tk.END, content)
+        self._display_dataframe_in_table(dataframe)
 
     def _get_sequence_label_widget_by_target(self, target):
         if target == 1:
@@ -318,34 +353,64 @@ class App:
             return "Second sequence"
         raise ValueError("Target must be 1 or 2.")
 
-    def _clear_sequence_slot(self, target):
-        slot = self._get_sequence_slot(target)
-        slot.sequence = ""
-        slot.file_path = None
-        slot.source_label = get_default_empty_file_label(target)
-
-        label_widget = self._get_sequence_label_widget_by_target(target)
-        label_widget.config(text=slot.source_label)
-
-    def _clear_single_analysis_state(self):
-        self.last_results = []
-        self.last_statistics_df = None
-        self.last_selected_motif = None
-        self.last_analyzed_sequence = ""
-        self.last_analyzed_sequence_label = ""
-        self.selected_motif_combobox["values"] = []
-        self.selected_motif_combobox.set("")
-
-    def _clear_comparison_state(self):
-        self.last_comparison_df = None
-
     def _show_sequence_warning_if_needed(self, sequence):
         warning_message = get_sequence_warning(sequence)
         if warning_message:
             show_warning("Sequence Warning", warning_message)
 
-    def _validate_analysis_inputs(self, motifs, sequence):
-        validate_motifs_against_sequence(motifs, sequence)
+    # =========================
+    # File actions
+    # =========================
+
+    @staticmethod
+    def _load_sequence_from_path(path):
+        lowered = path.lower()
+
+        if lowered.endswith(".txt"):
+            return load_sequence_from_txt(path)
+        if lowered.endswith(".fasta") or lowered.endswith(".fa"):
+            return load_sequence_from_fasta(path)
+
+        raise ValueError("Unsupported file format. Please choose TXT, FASTA, or FA.")
+
+    def choose_file(self, target):
+        self._set_status("Loading sequence from file...")
+        selected_path = ask_open_sequence_filename()
+
+        if not selected_path:
+            self._set_status("Ready")
+            return
+
+        try:
+            sequence = self._load_sequence_from_path(selected_path)
+
+            self._set_file_path_by_target(target, selected_path)
+            self._set_sequence_data(target, sequence, selected_path)
+
+            target_name = self._get_target_display_name(target)
+            success_message = f"{target_name} loaded successfully.\nLength: {len(sequence)}"
+
+            self._update_action_buttons_state()
+            self._show_sequence_warning_if_needed(sequence)
+            self._set_status("Sequence loaded successfully")
+            show_info("Success", success_message)
+
+        except Exception as e:
+            self._clear_sequence_slot(target)
+            self._set_status("Failed to load sequence")
+            self._update_action_buttons_state()
+            show_error("Error", f"Failed to load sequence: {e}")
+
+    # =========================
+    # NCBI actions
+    # =========================
+
+    def _get_ncbi_entry_by_target(self, target):
+        if target == 1:
+            return self.ncbi_entry
+        if target == 2:
+            return self.ncbi_entry_2
+        raise ValueError("Target must be 1 or 2.")
 
     def _set_ncbi_buttons_state(self, state):
         self.fetch_button.config(state=state)
@@ -432,33 +497,6 @@ class App:
                 lambda: self._handle_ncbi_error(f"Failed to load example: {e}")
             )
 
-    def choose_file(self, target):
-        self._set_status("Loading sequence from file...")
-        selected_path = ask_open_sequence_filename()
-
-        if not selected_path:
-            self._set_status("Ready")
-            return
-
-        try:
-            sequence = self._load_sequence_from_path(selected_path)
-
-            self._set_file_path_by_target(target, selected_path)
-            target_name = self._get_target_display_name(target)
-            success_message = f"{target_name} loaded successfully.\nLength: {len(sequence)}"
-
-            self._set_sequence_data(target, sequence, selected_path)
-            self._update_action_buttons_state()
-            self._show_sequence_warning_if_needed(sequence)
-            self._set_status("Sequence loaded successfully")
-            show_info("Success", success_message)
-
-        except Exception as e:
-            self._clear_sequence_slot(target)
-            self._set_status("Failed to load sequence")
-            self._update_action_buttons_state()
-            show_error("Error", f"Failed to load sequence: {e}")
-
     def fetch_from_ncbi(self, target):
         accession_entry = self._get_ncbi_entry_by_target(target)
         accession_id = accession_entry.get().strip()
@@ -498,6 +536,13 @@ class App:
         )
         thread.start()
 
+    # =========================
+    # Analysis actions
+    # =========================
+
+    def _validate_analysis_inputs(self, motifs, sequence):
+        validate_motifs_against_sequence(motifs, sequence)
+
     def _get_segment_length(self):
         segment_text = self.segment_entry.get().strip()
 
@@ -528,107 +573,6 @@ class App:
         segment_length = self._get_segment_length()
         return motifs, segment_length
 
-    def _refresh_statistics_for_selected_motif(self):
-        if not self.last_analyzed_sequence:
-            raise ValueError("Sequence is not loaded.")
-
-        motif = self.selected_motif_var.get().strip()
-        if not motif:
-            raise ValueError("Please select a motif.")
-
-        segment_length = self._get_segment_length()
-        self.last_selected_motif = motif
-
-        mode = self.segment_mode_var.get()
-
-        self.last_statistics_df = build_motif_statistics(
-            self.last_analyzed_sequence,
-            motif,
-            segment_length,
-            mode=mode,
-        )
-
-    def _prepare_selected_motif_statistics(self):
-        if not self.last_results or not self.last_analyzed_sequence:
-            raise ValueError("No analysis results available.")
-
-        self._refresh_statistics_for_selected_motif()
-
-    def _show_figure_window(self, title, fig):
-        open_figure_window(self.root, title, fig)
-
-    def show_gc_plot(self):
-        if self.last_statistics_df is not None:
-            try:
-                fig = create_gc_content_figure(self.last_statistics_df)
-                self._show_figure_window("GC Content Plot", fig)
-                self._set_status("GC plot generated")
-            except Exception as e:
-                self._set_status("Failed to generate GC plot")
-                show_error("Error", f"Failed to generate GC plot: {e}")
-        else:
-            self._set_status("No analysis results available")
-            show_error("Error", "No analysis results available.")
-
-    def show_gc_comparison_plot(self):
-        sequence_1 = self._get_sequence_by_target(1)
-        sequence_2 = self._get_sequence_by_target(2)
-
-        if not sequence_1 or not sequence_2:
-            self._set_status("GC comparison failed")
-            show_error("Error", "Both sequences must be loaded.")
-            return
-
-        try:
-            self._set_status("Generating GC comparison plot...")
-            segment_length = self._get_segment_length()
-            mode = self.segment_mode_var.get()
-
-            df1 = build_motif_statistics(
-                sequence_1,
-                self.last_selected_motif or "ATG",
-                segment_length,
-                mode=mode,
-            )
-
-            df2 = build_motif_statistics(
-                sequence_2,
-                self.last_selected_motif or "ATG",
-                segment_length,
-                mode=mode,
-            )
-
-            fig = create_gc_comparison_figure(df1, df2)
-            self._show_figure_window("GC Comparison", fig)
-            self._set_status("GC comparison plot generated")
-
-        except Exception as e:
-            self._set_status("Failed to generate GC comparison")
-            show_error("Error", f"Failed to generate GC comparison: {e}")
-
-    def show_gc_motif_overlay(self):
-        if not self.last_results or not self.last_analyzed_sequence:
-            self._set_status("No analysis results available")
-            show_error("Error", "No analysis results available.")
-            return
-
-        try:
-            self._set_status("Generating GC and motif overlay plot...")
-            self._prepare_selected_motif_statistics()
-
-            fig = create_gc_motif_overlay_figure(
-                self.last_statistics_df,
-                self.last_results,
-                len(self.last_analyzed_sequence)
-            )
-
-            self._show_figure_window("GC + Motif Overlay", fig)
-            self._set_status("GC and motif overlay plot generated")
-
-        except Exception as e:
-            self._set_status("Failed to generate overlay plot")
-            show_error("Error", f"Failed to generate overlay plot: {e}")
-
     def _build_extended_sequence_statistics_for_sequence(self, sequence, motif, segment_length, mode):
         return build_extended_sequence_statistics(
             sequence,
@@ -637,133 +581,34 @@ class App:
             mode=mode,
         )
 
-    def _build_extended_sequence_statistics(self, motif, segment_length):
-        return self._build_extended_sequence_statistics_for_sequence(
-            self.last_analyzed_sequence,
+    def _refresh_statistics_for_selected_motif(self):
+        if not self.analysis_state.last_analyzed_sequence:
+            raise ValueError("Sequence is not loaded.")
+
+        motif = self.selected_motif_var.get().strip()
+        if not motif:
+            raise ValueError("Please select a motif.")
+
+        segment_length = self._get_segment_length()
+        self.analysis_state.last_selected_motif = motif
+
+        mode = self.segment_mode_var.get()
+
+        self.analysis_state.last_statistics_df = build_motif_statistics(
+            self.analysis_state.last_analyzed_sequence,
             motif,
             segment_length,
-            mode=self.segment_mode_var.get()
+            mode=mode,
         )
 
-    def _filter_and_sort_results(self, results):
-        return filter_and_sort_results(
-            results,
-            only_found=self.only_found_var.get(),
-            sort_mode=self.sort_results_var.get(),
-            top_n_text=self.top_n_entry.get().strip(),
-        )
+    def _prepare_selected_motif_statistics(self):
+        if (
+            not self.analysis_state.last_results
+            or not self.analysis_state.last_analyzed_sequence
+        ):
+            raise ValueError("No analysis results available.")
 
-    def _format_analysis_results_for_sequence(
-        self,
-        sequence,
-        sequence_label,
-        motifs,
-        segment_length,
-        results
-    ):
-        selected_motif = self.last_selected_motif or motifs[0]
-        extended_stats = self._build_extended_sequence_statistics_for_sequence(
-            sequence,
-            selected_motif,
-            segment_length,
-            mode=self.segment_mode_var.get()
-        )
-
-        return format_analysis_results_for_sequence(
-            sequence=sequence,
-            sequence_label=sequence_label,
-            motifs=motifs,
-            segment_length=segment_length,
-            results=results,
-            selected_motif=selected_motif,
-            statistics_df=self.last_statistics_df,
-            extended_stats=extended_stats,
-            segment_mode=self.segment_mode_var.get(),
-        )
-
-    def _format_comparison_results(self, motifs):
-        return format_comparison_results(
-            sequence_1=self._get_sequence_by_target(1),
-            sequence_2=self._get_sequence_by_target(2),
-            motifs=motifs,
-            comparison_df=self.last_comparison_df,
-        )
-
-    def _save_comparison_history(self, motifs):
-        history_entry = build_comparison_history_entry(
-            sequence_1=self._get_sequence_by_target(1),
-            sequence_2=self._get_sequence_by_target(2),
-            motifs=motifs,
-            comparison_df=self.last_comparison_df,
-        )
-        save_analysis_history(history_entry)
-
-    def _save_analysis_history_for_sequence(
-        self,
-        sequence,
-        sequence_label,
-        motifs,
-        segment_length,
-        results
-    ):
-        history_entry = build_analysis_history_entry(
-            sequence=sequence,
-            sequence_label=sequence_label,
-            motifs=motifs,
-            segment_length=segment_length,
-            results=results,
-        )
-        save_analysis_history(history_entry)
-
-    def _clear_result_table(self):
-        self.result_tree.delete(*self.result_tree.get_children())
-        self.result_tree["columns"] = ()
-
-    def _display_dataframe_in_table(self, df):
-        self._clear_result_table()
-
-        if df is None or df.empty:
-            return
-
-        columns = list(df.columns)
-        self.result_tree["columns"] = columns
-
-        for column in columns:
-            self.result_tree.heading(column, text=column)
-            self.result_tree.column(
-                column,
-                width=120,
-                minwidth=100,
-                anchor="center",
-                stretch=True
-            )
-
-        for _, row in df.iterrows():
-            values = [str(value) for value in row.tolist()]
-            self.result_tree.insert("", tk.END, values=values)
-
-        self.root.after(50, self._resize_result_columns)
-        self.root.after(150, self._resize_result_columns)
-        self.root.after(300, self._resize_result_columns)
-
-    def _display_results(self, content, dataframe=None):
-        self.result_text.delete("1.0", tk.END)
-        self.result_text.insert(tk.END, content)
-        self._display_dataframe_in_table(dataframe)
-
-    def _prepare_comparison_results(self, motifs):
-        self.last_comparison_df = run_sequence_comparison(
-            self._get_sequence_by_target(1),
-            self._get_sequence_by_target(2),
-            motifs,
-        )
-        return self.last_comparison_df
-
-    def _get_sequence_slot(self, target):
-        try:
-            return self.sequences_state[target]
-        except KeyError as exc:
-            raise ValueError("Target must be 1 or 2.") from exc
+        self._refresh_statistics_for_selected_motif()
 
     def _run_analysis_for_sequence(self, sequence, sequence_label):
         if not sequence:
@@ -790,21 +635,20 @@ class App:
 
             self._clear_comparison_state()
 
-            self.last_results = prepared["results"]
-            self.last_analyzed_sequence = sequence
-            self.last_analyzed_sequence_label = sequence_label
+            self.analysis_state.last_results = prepared["results"]
+            self.analysis_state.last_analyzed_sequence = sequence
+            self.analysis_state.last_analyzed_sequence_label = sequence_label
+            self.analysis_state.last_selected_motif = prepared["selected_motif"]
+            self.analysis_state.last_statistics_df = prepared["statistics_df"]
 
             self.selected_motif_combobox["values"] = motifs
             self.selected_motif_combobox.set(prepared["selected_motif"])
-
-            self.last_selected_motif = prepared["selected_motif"]
-            self.last_statistics_df = prepared["statistics_df"]
 
             save_analysis_history(prepared["history_entry"])
 
             self._display_results(
                 prepared["final_text"],
-                dataframe=self.last_statistics_df
+                dataframe=self.analysis_state.last_statistics_df
             )
 
             self._update_action_buttons_state()
@@ -857,7 +701,7 @@ class App:
                 top_n_text=self.top_n_entry.get().strip(),
             )
 
-            self.last_comparison_df = prepared["comparison_df"]
+            self.analysis_state.last_comparison_df = prepared["comparison_df"]
 
             self._clear_single_analysis_state()
 
@@ -865,7 +709,7 @@ class App:
 
             self._display_results(
                 prepared["final_text"],
-                dataframe=self.last_comparison_df
+                dataframe=self.analysis_state.last_comparison_df
             )
             self._update_action_buttons_state()
             self._set_status("Comparison complete")
@@ -874,24 +718,28 @@ class App:
             self._set_status("Comparison failed")
             show_error("Error", f"Comparison failed: {e}")
 
+    # =========================
+    # Export actions
+    # =========================
+
     def _build_session_data(self):
         return build_session_data(
             sequence_1=self._get_sequence_by_target(1),
             sequence_2=self._get_sequence_by_target(2),
             file_path_1=self._get_file_path_by_target(1),
             file_path_2=self._get_file_path_by_target(2),
-            last_analyzed_sequence_label=self.last_analyzed_sequence_label,
-            selected_motif=self.last_selected_motif,
-            analysis_results=self.last_results,
-            statistics_df=self.last_statistics_df,
-            comparison_df=self.last_comparison_df,
+            last_analyzed_sequence_label=self.analysis_state.last_analyzed_sequence_label,
+            selected_motif=self.analysis_state.last_selected_motif,
+            analysis_results=self.analysis_state.last_results,
+            statistics_df=self.analysis_state.last_statistics_df,
+            comparison_df=self.analysis_state.last_comparison_df,
         )
 
     def export_json(self):
         if (
-            not self.last_results and
-            self.last_statistics_df is None and
-            self.last_comparison_df is None
+            not self.analysis_state.last_results
+            and self.analysis_state.last_statistics_df is None
+            and self.analysis_state.last_comparison_df is None
         ):
             self._set_status("JSON export failed")
             show_error("Error", "No analysis session available for export.")
@@ -917,7 +765,10 @@ class App:
             show_error("Error", f"Failed to export JSON: {e}")
 
     def export_csv(self):
-        if self.last_statistics_df is None and self.last_comparison_df is None:
+        if (
+            self.analysis_state.last_statistics_df is None
+            and self.analysis_state.last_comparison_df is None
+        ):
             self._set_status("CSV export failed")
             show_error("Error", "No analysis results available for export.")
             return
@@ -934,8 +785,8 @@ class App:
         try:
             self._set_status("Exporting CSV...")
             export_analysis_or_comparison_csv(
-                statistics_df=self.last_statistics_df,
-                comparison_df=self.last_comparison_df,
+                statistics_df=self.analysis_state.last_statistics_df,
+                comparison_df=self.analysis_state.last_comparison_df,
                 output_path=output_path,
             )
             self._set_status("CSV exported")
@@ -944,58 +795,35 @@ class App:
             self._set_status("CSV export failed")
             show_error("Error", f"Failed to export CSV: {e}")
 
-    def show_plot(self):
+    def save_plot(self):
+        output_path = ask_save_as_filename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png")]
+        )
+
+        if not output_path:
+            self._set_status("Ready")
+            return
+
         try:
-            self._set_status("Generating distribution plot...")
+            self._set_status("Saving plot as PNG...")
             self._prepare_selected_motif_statistics()
-            fig = create_motif_distribution_figure(
-                self.last_statistics_df,
-                self.last_selected_motif
+            export_distribution_plot_png(
+                statistics_df=self.analysis_state.last_statistics_df,
+                selected_motif=self.analysis_state.last_selected_motif,
+                output_path=output_path,
             )
-            self._show_figure_window(
-                f"{self.last_analyzed_sequence_label} Distribution Plot",
-                fig
-            )
-            self._set_status("Distribution plot generated")
+            self._set_status("Plot saved as PNG")
+            show_info("Success", f"Plot saved to:\n{output_path}")
         except Exception as e:
-            self._set_status("Failed to generate plot")
-            show_error("Error", f"Failed to generate plot: {e}")
-
-    def show_multi_motif_plot(self):
-        if not self.last_results:
-            self._set_status("No motif analysis results available")
-            show_error("Error", "No motif analysis results available.")
-            return
-
-        try:
-            self._set_status("Generating multi-motif summary plot...")
-            fig = create_multiple_motifs_summary_figure(self.last_results)
-            self._show_figure_window("Multi-Motif Summary", fig)
-            self._set_status("Multi-motif summary plot generated")
-        except Exception as e:
-            self._set_status("Failed to generate multi-motif plot")
-            show_error("Error", f"Failed to generate multi-motif plot: {e}")
-
-    def show_positions_plot(self):
-        if not self.last_results or not self.last_analyzed_sequence:
-            self._set_status("No motif analysis results available")
-            show_error("Error", "No motif analysis results available.")
-            return
-
-        try:
-            self._set_status("Generating motif positions plot...")
-            fig = create_motif_positions_figure(self.last_results, len(self.last_analyzed_sequence))
-            self._show_figure_window(
-                f"{self.last_analyzed_sequence_label} Motif Positions",
-                fig
-            )
-            self._set_status("Motif positions plot generated")
-        except Exception as e:
-            self._set_status("Failed to generate motif position plot")
-            show_error("Error", f"Failed to generate motif position plot: {e}")
+            self._set_status("Failed to save plot")
+            show_error("Error", f"Failed to save plot: {e}")
 
     def save_positions_plot(self):
-        if not self.last_results or not self.last_analyzed_sequence:
+        if (
+            not self.analysis_state.last_results
+            or not self.analysis_state.last_analyzed_sequence
+        ):
             self._set_status("No motif analysis results available")
             show_error("Error", "No motif analysis results available.")
             return
@@ -1012,8 +840,8 @@ class App:
         try:
             self._set_status("Saving motif positions plot as PNG...")
             export_positions_plot_png(
-                results=self.last_results,
-                sequence_length=len(self.last_analyzed_sequence),
+                results=self.analysis_state.last_results,
+                sequence_length=len(self.analysis_state.last_analyzed_sequence),
                 output_path=output_path,
             )
             self._set_status("Motif positions plot saved as PNG")
@@ -1022,97 +850,10 @@ class App:
             self._set_status("Failed to save positions plot")
             show_error("Error", f"Failed to save positions plot: {e}")
 
-    def _get_motif_colors(self):
-        palette = [
-            "#fff59d",
-            "#a5d6a7",
-            "#90caf9",
-            "#ffab91",
-            "#ce93d8",
-            "#80deea",
-            "#f48fb1",
-            "#c5e1a5",
-        ]
-
-        return {
-            result["motif"]: palette[index % len(palette)]
-            for index, result in enumerate(self.last_results)
-        }
-
-    def show_highlighted_sequence(self):
-        if not self.last_results or not self.last_analyzed_sequence:
-            self._set_status("No analysis results available")
-            show_error("Error", "No motif analysis results available.")
-            return
-
-        try:
-            self._set_status("Generating highlighted sequence view...")
-
-            motif_colors = self._get_motif_colors()
-            open_highlighted_sequence_window(
-                root=self.root,
-                sequence=self.last_analyzed_sequence,
-                sequence_label=self.last_analyzed_sequence_label,
-                results=self.last_results,
-                motif_colors=motif_colors,
-            )
-
-            self._set_status("Highlighted sequence view generated")
-
-        except Exception as e:
-            self._set_status("Failed to generate highlighted sequence view")
-            show_error("Error", f"Failed to generate highlighted sequence view: {e}")
-
-    def show_interactive_positions_plot(self):
-        if not self.last_results or not self.last_analyzed_sequence:
-            self._set_status("No motif analysis results available")
-            show_error("Error", "No motif analysis results available.")
-            return
-
-        try:
-            self._set_status("Generating interactive motif plot...")
-            os.makedirs(RESULTS_DIR, exist_ok=True)
-
-            output_html = interactive_motif_positions(
-                self.last_results,
-                len(self.last_analyzed_sequence)
-            )
-
-            open_interactive_plot_info_window(self.root, output_html)
-
-            self._set_status("Interactive motif plot generated")
-
-        except Exception as e:
-            self._set_status("Failed to generate interactive plot")
-            show_error("Error", f"Failed to generate interactive plot: {e}")
-
-    def save_plot(self):
-        output_path = ask_save_as_filename(
-            defaultextension=".png",
-            filetypes=[("PNG files", "*.png")]
-        )
-
-        if not output_path:
-            self._set_status("Ready")
-            return
-
-        try:
-            self._set_status("Saving plot as PNG...")
-            self._prepare_selected_motif_statistics()
-            export_distribution_plot_png(
-                statistics_df=self.last_statistics_df,
-                selected_motif=self.last_selected_motif,
-                output_path=output_path,
-            )
-            self._set_status("Plot saved as PNG")
-            show_info("Success", f"Plot saved to:\n{output_path}")
-        except Exception as e:
-            self._set_status("Failed to save plot")
-            show_error("Error", f"Failed to save plot: {e}")
-
     def export_pdf(self):
-        if self.last_comparison_df is None and (
-            not self.last_results or self.last_statistics_df is None
+        if self.analysis_state.last_comparison_df is None and (
+            not self.analysis_state.last_results
+            or self.analysis_state.last_statistics_df is None
         ):
             self._set_status("PDF export failed")
             show_error("Error", "No analysis or comparison results available.")
@@ -1130,15 +871,15 @@ class App:
         try:
             self._set_status("Generating PDF...")
 
-            if self.last_comparison_df is None:
+            if self.analysis_state.last_comparison_df is None:
                 self._prepare_selected_motif_statistics()
 
             export_analysis_or_comparison_pdf(
-                comparison_df=self.last_comparison_df,
-                analysis_results=self.last_results,
-                statistics_df=self.last_statistics_df,
-                selected_motif=self.last_selected_motif,
-                analyzed_sequence_length=len(self.last_analyzed_sequence),
+                comparison_df=self.analysis_state.last_comparison_df,
+                analysis_results=self.analysis_state.last_results,
+                statistics_df=self.analysis_state.last_statistics_df,
+                selected_motif=self.analysis_state.last_selected_motif,
+                analyzed_sequence_length=len(self.analysis_state.last_analyzed_sequence),
                 output_path=output_path,
             )
 
@@ -1148,29 +889,225 @@ class App:
             self._set_status("PDF export failed")
             show_error("Error", f"Failed to export PDF: {e}")
 
+    # =========================
+    # Visualization and results
+    # =========================
+
+    def show_plot(self):
+        try:
+            self._set_status("Generating distribution plot...")
+            self._prepare_selected_motif_statistics()
+            fig = create_motif_distribution_figure(
+                self.analysis_state.last_statistics_df,
+                self.analysis_state.last_selected_motif
+            )
+            self._show_figure_window(
+                f"{self.analysis_state.last_analyzed_sequence_label} Distribution Plot",
+                fig
+            )
+            self._set_status("Distribution plot generated")
+        except Exception as e:
+            self._set_status("Failed to generate plot")
+            show_error("Error", f"Failed to generate plot: {e}")
+
+    def show_multi_motif_plot(self):
+        if not self.analysis_state.last_results:
+            self._set_status("No motif analysis results available")
+            show_error("Error", "No motif analysis results available.")
+            return
+
+        try:
+            self._set_status("Generating multi-motif summary plot...")
+            fig = create_multiple_motifs_summary_figure(self.analysis_state.last_results)
+            self._show_figure_window("Multi-Motif Summary", fig)
+            self._set_status("Multi-motif summary plot generated")
+        except Exception as e:
+            self._set_status("Failed to generate multi-motif plot")
+            show_error("Error", f"Failed to generate multi-motif plot: {e}")
+
+    def show_positions_plot(self):
+        if (
+            not self.analysis_state.last_results
+            or not self.analysis_state.last_analyzed_sequence
+        ):
+            self._set_status("No motif analysis results available")
+            show_error("Error", "No motif analysis results available.")
+            return
+
+        try:
+            self._set_status("Generating motif positions plot...")
+            fig = create_motif_positions_figure(
+                self.analysis_state.last_results,
+                len(self.analysis_state.last_analyzed_sequence),
+            )
+            self._show_figure_window(
+                f"{self.analysis_state.last_analyzed_sequence_label} Motif Positions",
+                fig
+            )
+            self._set_status("Motif positions plot generated")
+        except Exception as e:
+            self._set_status("Failed to generate motif position plot")
+            show_error("Error", f"Failed to generate motif position plot: {e}")
+
+    def show_gc_plot(self):
+        if self.analysis_state.last_statistics_df is not None:
+            try:
+                fig = create_gc_content_figure(self.analysis_state.last_statistics_df)
+                self._show_figure_window("GC Content Plot", fig)
+                self._set_status("GC plot generated")
+            except Exception as e:
+                self._set_status("Failed to generate GC plot")
+                show_error("Error", f"Failed to generate GC plot: {e}")
+        else:
+            self._set_status("No analysis results available")
+            show_error("Error", "No analysis results available.")
+
+    def show_gc_comparison_plot(self):
+        sequence_1 = self._get_sequence_by_target(1)
+        sequence_2 = self._get_sequence_by_target(2)
+
+        if not sequence_1 or not sequence_2:
+            self._set_status("GC comparison failed")
+            show_error("Error", "Both sequences must be loaded.")
+            return
+
+        try:
+            self._set_status("Generating GC comparison plot...")
+            segment_length = self._get_segment_length()
+            mode = self.segment_mode_var.get()
+
+            df1 = build_motif_statistics(
+                sequence_1,
+                self.analysis_state.last_selected_motif or "ATG",
+                segment_length,
+                mode=mode,
+            )
+
+            df2 = build_motif_statistics(
+                sequence_2,
+                self.analysis_state.last_selected_motif or "ATG",
+                segment_length,
+                mode=mode,
+            )
+
+            fig = create_gc_comparison_figure(df1, df2)
+            self._show_figure_window("GC Comparison", fig)
+            self._set_status("GC comparison plot generated")
+
+        except Exception as e:
+            self._set_status("Failed to generate GC comparison")
+            show_error("Error", f"Failed to generate GC comparison: {e}")
+
+    def show_gc_motif_overlay(self):
+        if (
+            not self.analysis_state.last_results
+            or not self.analysis_state.last_analyzed_sequence
+        ):
+            self._set_status("No analysis results available")
+            show_error("Error", "No analysis results available.")
+            return
+
+        try:
+            self._set_status("Generating GC and motif overlay plot...")
+            self._prepare_selected_motif_statistics()
+
+            fig = create_gc_motif_overlay_figure(
+                self.analysis_state.last_statistics_df,
+                self.analysis_state.last_results,
+                len(self.analysis_state.last_analyzed_sequence)
+            )
+
+            self._show_figure_window("GC + Motif Overlay", fig)
+            self._set_status("GC and motif overlay plot generated")
+
+        except Exception as e:
+            self._set_status("Failed to generate overlay plot")
+            show_error("Error", f"Failed to generate overlay plot: {e}")
+
+    def _get_motif_colors(self):
+        palette = [
+            "#fff59d",
+            "#a5d6a7",
+            "#90caf9",
+            "#ffab91",
+            "#ce93d8",
+            "#80deea",
+            "#f48fb1",
+            "#c5e1a5",
+        ]
+
+        return {
+            result["motif"]: palette[index % len(palette)]
+            for index, result in enumerate(self.analysis_state.last_results)
+        }
+
+    def show_highlighted_sequence(self):
+        if (
+            not self.analysis_state.last_results
+            or not self.analysis_state.last_analyzed_sequence
+        ):
+            self._set_status("No analysis results available")
+            show_error("Error", "No motif analysis results available.")
+            return
+
+        try:
+            self._set_status("Generating highlighted sequence view...")
+
+            motif_colors = self._get_motif_colors()
+            open_highlighted_sequence_window(
+                root=self.root,
+                sequence=self.analysis_state.last_analyzed_sequence,
+                sequence_label=self.analysis_state.last_analyzed_sequence_label,
+                results=self.analysis_state.last_results,
+                motif_colors=motif_colors,
+            )
+
+            self._set_status("Highlighted sequence view generated")
+
+        except Exception as e:
+            self._set_status("Failed to generate highlighted sequence view")
+            show_error("Error", f"Failed to generate highlighted sequence view: {e}")
+
+    def show_interactive_positions_plot(self):
+        if (
+            not self.analysis_state.last_results
+            or not self.analysis_state.last_analyzed_sequence
+        ):
+            self._set_status("No motif analysis results available")
+            show_error("Error", "No motif analysis results available.")
+            return
+
+        try:
+            self._set_status("Generating interactive motif plot...")
+            os.makedirs(RESULTS_DIR, exist_ok=True)
+
+            output_html = interactive_motif_positions(
+                self.analysis_state.last_results,
+                len(self.analysis_state.last_analyzed_sequence)
+            )
+
+            open_interactive_plot_info_window(self.root, output_html)
+
+            self._set_status("Interactive motif plot generated")
+
+        except Exception as e:
+            self._set_status("Failed to generate interactive plot")
+            show_error("Error", f"Failed to generate interactive plot: {e}")
+
     def show_analysis_history(self):
-        history_path = ANALYSIS_HISTORY_PATH
         self._update_action_buttons_state()
 
-        if not os.path.exists(history_path):
+        if not os.path.exists(ANALYSIS_HISTORY_PATH):
             self._set_status("No analysis history available")
             show_info("History", "No analysis history available yet.")
             return
 
         try:
             self._set_status("Opening analysis history...")
-            history_df = pd.read_csv(history_path)
+            history_df = pd.read_csv(ANALYSIS_HISTORY_PATH)
             history_text = history_df.to_string(index=False)
-            self._display_results(
-                history_text,
-                dataframe=history_df
-
-            )
+            self._display_results(history_text, dataframe=history_df)
             self._set_status("Analysis history opened")
         except Exception as e:
             self._set_status("Failed to open analysis history")
             show_error("Error", f"Failed to open history: {e}")
-
-    def _set_status(self, text):
-        self.status_var.set(text)
-        self.root.update_idletasks()

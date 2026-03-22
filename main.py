@@ -2,7 +2,7 @@ import argparse
 import sys
 import tkinter as tk
 
-from src.app import App
+from src.app_controller import AppController
 from src.io_utils import load_sequence_from_fasta, load_sequence_from_txt
 from src.motif_analysis import analyze_multiple_motifs, build_statistics_dataframe
 from src.validation_utils import normalize_motifs
@@ -90,7 +90,7 @@ def main():
         return
 
     root = tk.Tk()
-    app = App(root)
+    app = AppController(root)
     root.mainloop()
 
 
