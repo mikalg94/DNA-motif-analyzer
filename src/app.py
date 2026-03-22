@@ -88,6 +88,9 @@ class App:
         build_results_frame(self)
         build_status_bar(self)
 
+        self.result_tree.bind("<Configure>", self._resize_result_columns)
+        self.result_notebook.bind("<<NotebookTabChanged>>", self._on_result_tab_changed)
+
         self._configure_styles()
         self._update_action_buttons_state()
 
@@ -137,10 +140,42 @@ class App:
         except Exception:
             pass
 
+    def _resize_result_columns(self, event=None):
+        columns = self.result_tree["columns"]
+        if not columns:
+            return
+
+        self.root.update_idletasks()
+
+        total_width = self.result_tree.winfo_width()
+        if total_width <= 100:
+            return
+
+        usable_width = total_width - 4
+        column_width = max(100, usable_width // len(columns))
+
+        for column in columns:
+            self.result_tree.column(
+                column,
+                width=column_width,
+                minwidth=100,
+                stretch=True
+            )
+
+    def _on_result_tab_changed(self, event=None):
+        self.root.after(50, self._resize_result_columns)
+        self.root.after(150, self._resize_result_columns)
+        self.root.after(300, self._resize_result_columns)
+
     def toggle_theme(self):
         self.current_theme = "dark" if self.current_theme == "light" else "light"
         self._configure_styles()
-        self._set_status(f"Theme changed to {self.current_theme}")
+
+        self.root.after(50, self._resize_result_columns)
+        self.root.after(150, self._resize_result_columns)
+        self.root.after(300, self._resize_result_columns)
+
+        self._set_status("Ready")
 
     def _update_action_buttons_state(self):
         has_sequence_1 = bool(self.sequence)
@@ -764,11 +799,21 @@ class App:
 
         for column in columns:
             self.result_tree.heading(column, text=column)
-            self.result_tree.column(column, width=130, anchor="center")
+            self.result_tree.column(
+                column,
+                width=120,
+                minwidth=100,
+                anchor="center",
+                stretch=True
+            )
 
         for _, row in df.iterrows():
             values = [str(value) for value in row.tolist()]
             self.result_tree.insert("", tk.END, values=values)
+
+        self.root.after(50, self._resize_result_columns)
+        self.root.after(150, self._resize_result_columns)
+        self.root.after(300, self._resize_result_columns)
 
     def _display_results(self, content, dataframe=None):
         self.result_text.delete("1.0", tk.END)
