@@ -72,12 +72,16 @@ from src.gui_helpers import (
 
 from src.constants import ANALYSIS_HISTORY_PATH, INTERACTIVE_PLOT_PATH, RESULTS_DIR
 
+from src.app_state import build_sequences_state
+
 class App:
     def __init__(self, root):
         self.root = root
         self.root.title("DNA Motif Analyzer")
         self.root.geometry("1000x900")
         self.root.resizable(True, True)
+
+        self.sequences_state = build_sequences_state()
 
         self.file_path = None
         self.file_path_2 = None
@@ -264,6 +268,10 @@ class App:
         raise ValueError("Unsupported file format. Please choose TXT, FASTA, or FA.")
 
     def _set_sequence_data(self, target, sequence, source_label):
+        slot = self._get_sequence_slot(target)
+        slot.sequence = sequence
+        slot.source_label = source_label
+
         if target == 1:
             self.sequence = sequence
         elif target == 2:
@@ -275,11 +283,11 @@ class App:
         label_widget.config(text=source_label)
 
     def _get_sequence_by_target(self, target):
-        if target == 1:
-            return self.sequence
-        if target == 2:
-            return self.sequence_2
-        raise ValueError("Target must be 1 or 2.")
+        slot = self._get_sequence_slot(target)
+        return slot.sequence
+
+    def _get_sequence_length_by_target(self, target):
+        return len(self._get_sequence_by_target(target))
 
     def _get_ncbi_entry_by_target(self, target):
         if target == 1:
@@ -289,13 +297,13 @@ class App:
         raise ValueError("Target must be 1 or 2.")
 
     def _get_file_path_by_target(self, target):
-        if target == 1:
-            return self.file_path
-        if target == 2:
-            return self.file_path_2
-        raise ValueError("Target must be 1 or 2.")
+        slot = self._get_sequence_slot(target)
+        return slot.file_path
 
     def _set_file_path_by_target(self, target, path):
+        slot = self._get_sequence_slot(target)
+        slot.file_path = path
+
         if target == 1:
             self.file_path = path
         elif target == 2:
@@ -316,6 +324,24 @@ class App:
         if target == 2:
             return "Second sequence"
         raise ValueError("Target must be 1 or 2.")
+
+    def _clear_sequence_slot(self, target):
+        slot = self._get_sequence_slot(target)
+        slot.sequence = ""
+        slot.file_path = None
+        slot.source_label = get_default_empty_file_label(target)
+
+        if target == 1:
+            self.sequence = ""
+            self.file_path = None
+        elif target == 2:
+            self.sequence_2 = ""
+            self.file_path_2 = None
+        else:
+            raise ValueError("Target must be 1 or 2.")
+
+        label_widget = self._get_sequence_label_widget_by_target(target)
+        label_widget.config(text=slot.source_label)
 
     def _clear_single_analysis_state(self):
         self.last_results = []
@@ -469,14 +495,7 @@ class App:
             show_info("Success", success_message)
 
         except Exception as e:
-            if target == 1:
-                self.sequence = ""
-            else:
-                self.sequence_2 = ""
-
-            label_widget = self._get_sequence_label_widget_by_target(target)
-            label_widget.config(text=get_default_empty_file_label(target))
-
+            self._clear_sequence_slot(target)
             self._set_status("Failed to load sequence")
             self._update_action_buttons_state()
             show_error("Error", f"Failed to load sequence: {e}")
@@ -797,6 +816,12 @@ class App:
             motifs,
         )
         return self.last_comparison_df
+
+    def _get_sequence_slot(self, target):
+        try:
+            return self.sequences_state[target]
+        except KeyError as exc:
+            raise ValueError("Target must be 1 or 2.") from exc
 
     def _run_analysis_for_sequence(self, sequence, sequence_label):
         if not sequence:
