@@ -1,6 +1,6 @@
-pandas>=2.0
-numpy>=1.26
-matplotlib>=3.7
-biopython>=1.83
-plotly>=5.20
-pytest>=8.0
+pandas
+numpy
+matplotlib
+plotly
+biopython
+pytest
