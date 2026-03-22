@@ -83,11 +83,6 @@ class App:
 
         self.sequences_state = build_sequences_state()
 
-        self.file_path = None
-        self.file_path_2 = None
-        self.sequence = ""
-        self.sequence_2 = ""
-
         self.last_results = []
         self.last_statistics_df = None
         self.last_selected_motif = None
@@ -272,13 +267,6 @@ class App:
         slot.sequence = sequence
         slot.source_label = source_label
 
-        if target == 1:
-            self.sequence = sequence
-        elif target == 2:
-            self.sequence_2 = sequence
-        else:
-            raise ValueError("Target must be 1 or 2.")
-
         label_widget = self._get_sequence_label_widget_by_target(target)
         label_widget.config(text=source_label)
 
@@ -304,13 +292,6 @@ class App:
         slot = self._get_sequence_slot(target)
         slot.file_path = path
 
-        if target == 1:
-            self.file_path = path
-        elif target == 2:
-            self.file_path_2 = path
-        else:
-            raise ValueError("Target must be 1 or 2.")
-
     def _get_sequence_label_widget_by_target(self, target):
         if target == 1:
             return self.file_label
@@ -330,15 +311,6 @@ class App:
         slot.sequence = ""
         slot.file_path = None
         slot.source_label = get_default_empty_file_label(target)
-
-        if target == 1:
-            self.sequence = ""
-            self.file_path = None
-        elif target == 2:
-            self.sequence_2 = ""
-            self.file_path_2 = None
-        else:
-            raise ValueError("Target must be 1 or 2.")
 
         label_widget = self._get_sequence_label_widget_by_target(target)
         label_widget.config(text=slot.source_label)
@@ -1370,6 +1342,7 @@ class App:
             self._display_results(
                 history_text,
                 dataframe=history_df
+
             )
             self._set_status("Analysis history opened")
         except Exception as e:
