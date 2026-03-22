@@ -70,7 +70,7 @@ from src.gui_helpers import (
     show_warning,
 )
 
-from src.constants import ANALYSIS_HISTORY_PATH, INTERACTIVE_PLOT_PATH, RESULTS_DIR
+from src.constants import ANALYSIS_HISTORY_PATH, RESULTS_DIR
 
 from src.app_state import build_sequences_state
 
@@ -200,8 +200,8 @@ class App:
         self._set_status("Ready")
 
     def _update_action_buttons_state(self):
-        has_sequence_1 = bool(self.sequence)
-        has_sequence_2 = bool(self.sequence_2)
+        has_sequence_1 = bool(self._get_sequence_by_target(1))
+        has_sequence_2 = bool(self._get_sequence_by_target(2))
         has_analysis_results = bool(self.last_results)
         has_statistics = self.last_statistics_df is not None
         has_comparison = self.last_comparison_df is not None
@@ -612,7 +612,10 @@ class App:
             show_error("Error", "No analysis results available.")
 
     def show_gc_comparison_plot(self):
-        if not self.sequence or not self.sequence_2:
+        sequence_1 = self._get_sequence_by_target(1)
+        sequence_2 = self._get_sequence_by_target(2)
+
+        if not sequence_1 or not sequence_2:
             self._set_status("GC comparison failed")
             show_error("Error", "Both sequences must be loaded.")
             return
@@ -623,14 +626,14 @@ class App:
             mode = self.segment_mode_var.get()
 
             df1 = build_motif_statistics(
-                self.sequence,
+                sequence_1,
                 self.last_selected_motif or "ATG",
                 segment_length,
                 mode=mode,
             )
 
             df2 = build_motif_statistics(
-                self.sequence_2,
+                sequence_2,
                 self.last_selected_motif or "ATG",
                 segment_length,
                 mode=mode,
@@ -740,17 +743,16 @@ class App:
 
     def _format_comparison_results(self, motifs):
         return format_comparison_results(
-            sequence_1=self.sequence,
-            sequence_2=self.sequence_2,
+            sequence_1=self._get_sequence_by_target(1),
+            sequence_2=self._get_sequence_by_target(2),
             motifs=motifs,
             comparison_df=self.last_comparison_df,
         )
 
-
     def _save_comparison_history(self, motifs):
         history_entry = build_comparison_history_entry(
-            sequence_1=self.sequence,
-            sequence_2=self.sequence_2,
+            sequence_1=self._get_sequence_by_target(1),
+            sequence_2=self._get_sequence_by_target(2),
             motifs=motifs,
             comparison_df=self.last_comparison_df,
         )
@@ -811,8 +813,8 @@ class App:
 
     def _prepare_comparison_results(self, motifs):
         self.last_comparison_df = run_sequence_comparison(
-            self.sequence,
-            self.sequence_2,
+            self._get_sequence_by_target(1),
+            self._get_sequence_by_target(2),
             motifs,
         )
         return self.last_comparison_df
@@ -897,12 +899,15 @@ class App:
         self.run_analysis_sequence_1()
 
     def run_comparison(self):
-        if not self.sequence:
+        sequence_1 = self._get_sequence_by_target(1)
+        sequence_2 = self._get_sequence_by_target(2)
+
+        if not sequence_1:
             self._set_status("Comparison failed")
             show_error("Error", "First sequence is not loaded.")
             return
 
-        if not self.sequence_2:
+        if not sequence_2:
             self._set_status("Comparison failed")
             show_error("Error", "Second sequence is not loaded.")
             return
@@ -910,8 +915,8 @@ class App:
         try:
             self._set_status("Comparing sequences...")
             motifs, _ = self._get_motifs_and_segment_length()
-            self._validate_analysis_inputs(motifs, self.sequence)
-            self._validate_analysis_inputs(motifs, self.sequence_2)
+            self._validate_analysis_inputs(motifs, sequence_1)
+            self._validate_analysis_inputs(motifs, sequence_2)
 
             self._prepare_comparison_results(motifs)
 
@@ -959,10 +964,10 @@ class App:
 
     def _build_session_data(self):
         return build_session_data(
-            sequence_1=self.sequence,
-            sequence_2=self.sequence_2,
-            file_path_1=self.file_path,
-            file_path_2=self.file_path_2,
+            sequence_1=self._get_sequence_by_target(1),
+            sequence_2=self._get_sequence_by_target(2),
+            file_path_1=self._get_file_path_by_target(1),
+            file_path_2=self._get_file_path_by_target(2),
             last_analyzed_sequence_label=self.last_analyzed_sequence_label,
             selected_motif=self.last_selected_motif,
             analysis_results=self.last_results,
