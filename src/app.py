@@ -4,8 +4,7 @@ import webbrowser
 
 import pandas as pd
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from tkinter import filedialog, ttk
 
 from src.export_utils import (
     create_gc_comparison_figure,
@@ -59,6 +58,14 @@ from src.export_service import (
     export_distribution_plot_png,
     export_positions_plot_png,
     export_session_json,
+)
+
+from src.gui_helpers import (
+    ask_save_as_filename,
+    open_figure_window,
+    show_error,
+    show_info,
+    show_warning,
 )
 
 class App:
@@ -315,7 +322,7 @@ class App:
     def _show_sequence_warning_if_needed(self, sequence):
         warning_message = get_sequence_warning(sequence)
         if warning_message:
-            messagebox.showwarning("Sequence Warning", warning_message)
+            show_warning("Sequence Warning", warning_message)
 
     def _validate_analysis_inputs(self, motifs, sequence):
         validate_motifs_against_sequence(motifs, sequence)
@@ -374,7 +381,7 @@ class App:
 
         if is_example:
             self._set_sequence_data(target, sequence, f"Loaded example from NCBI: {accession_id}")
-            messagebox.showinfo(
+            show_info(
                 "Success",
                 f"Example sequence loaded successfully.\n"
                 f"Description: {description}\n"
@@ -384,7 +391,7 @@ class App:
         else:
             self._set_sequence_data(target, sequence, f"Loaded from NCBI: {accession_id}")
             success_message = f"{target_name} downloaded from NCBI.\nLength: {len(sequence)}"
-            messagebox.showinfo("Success", success_message)
+            show_info("Success", success_message)
 
         self._update_action_buttons_state()
         self._set_ncbi_buttons_state("normal")
@@ -395,7 +402,7 @@ class App:
         self._set_ncbi_buttons_state("normal")
         self._update_action_buttons_state()
         self._set_status("NCBI download failed")
-        messagebox.showerror("Error", error_message)
+        show_error("Error", error_message)
 
     def _fetch_from_ncbi_worker(self, target, accession_id, email):
         try:
@@ -451,7 +458,7 @@ class App:
             self._update_action_buttons_state()
             self._show_sequence_warning_if_needed(sequence)
             self._set_status("Sequence loaded successfully")
-            messagebox.showinfo("Success", success_message)
+            show_info("Success", success_message)
 
         except Exception as e:
             if target == 1:
@@ -463,7 +470,7 @@ class App:
 
             self._set_status("Failed to load sequence")
             self._update_action_buttons_state()
-            messagebox.showerror("Error", f"Failed to load sequence: {e}")
+            show_error("Error", f"Failed to load sequence: {e}")
 
     def fetch_from_ncbi(self, target):
         accession_entry = self.ncbi_entry if target == 1 else self.ncbi_entry_2
@@ -472,7 +479,7 @@ class App:
 
         if not accession_id or not email:
             self._set_status("NCBI download failed")
-            messagebox.showerror("Error", "Please enter accession ID and email.")
+            show_error("Error", "Please enter accession ID and email.")
             return
 
         self._set_status("Downloading sequence from NCBI...")
@@ -561,20 +568,7 @@ class App:
         self._refresh_statistics_for_selected_motif()
 
     def _show_figure_window(self, title, fig):
-        plot_window = tk.Toplevel(self.root)
-        plot_window.title(title)
-        plot_window.geometry("950x650")
-        plot_window.resizable(True, True)
-
-        frame = tk.Frame(plot_window)
-        frame.pack(fill="both", expand=True)
-
-        canvas = FigureCanvasTkAgg(fig, master=frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True)
-
-        toolbar = NavigationToolbar2Tk(canvas, frame)
-        toolbar.update()
+        open_figure_window(self.root, title, fig)
 
     def show_gc_plot(self):
         if self.last_statistics_df is not None:
@@ -584,15 +578,15 @@ class App:
                 self._set_status("GC plot generated")
             except Exception as e:
                 self._set_status("Failed to generate GC plot")
-                messagebox.showerror("Error", f"Failed to generate GC plot: {e}")
+                show_error("Error", f"Failed to generate GC plot: {e}")
         else:
             self._set_status("No analysis results available")
-            messagebox.showerror("Error", "No analysis results available.")
+            show_error("Error", "No analysis results available.")
 
     def show_gc_comparison_plot(self):
         if not self.sequence or not self.sequence_2:
             self._set_status("GC comparison failed")
-            messagebox.showerror("Error", "Both sequences must be loaded.")
+            show_error("Error", "Both sequences must be loaded.")
             return
 
         try:
@@ -620,12 +614,12 @@ class App:
 
         except Exception as e:
             self._set_status("Failed to generate GC comparison")
-            messagebox.showerror("Error", f"Failed to generate GC comparison: {e}")
+            show_error("Error", f"Failed to generate GC comparison: {e}")
 
     def show_gc_motif_overlay(self):
         if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No analysis results available")
-            messagebox.showerror("Error", "No analysis results available.")
+            show_error("Error", "No analysis results available.")
             return
 
         try:
@@ -643,7 +637,7 @@ class App:
 
         except Exception as e:
             self._set_status("Failed to generate overlay plot")
-            messagebox.showerror("Error", f"Failed to generate overlay plot: {e}")
+            show_error("Error", f"Failed to generate overlay plot: {e}")
 
     def _build_extended_sequence_statistics_for_sequence(self, sequence, motif, segment_length, mode):
         return build_extended_sequence_statistics(
@@ -798,7 +792,7 @@ class App:
     def _run_analysis_for_sequence(self, sequence, sequence_label):
         if not sequence:
             self._set_status("Analysis failed")
-            messagebox.showerror("Error", f"{sequence_label} is not loaded.")
+            show_error("Error", f"{sequence_label} is not loaded.")
             return
 
         try:
@@ -852,7 +846,7 @@ class App:
 
         except Exception as e:
             self._set_status("Analysis failed")
-            messagebox.showerror("Error", str(e))
+            show_error("Error", str(e))
 
     def run_analysis_for_target(self, target):
         sequence = self._get_sequence_by_target(target)
@@ -871,12 +865,12 @@ class App:
     def run_comparison(self):
         if not self.sequence:
             self._set_status("Comparison failed")
-            messagebox.showerror("Error", "First sequence is not loaded.")
+            show_error("Error", "First sequence is not loaded.")
             return
 
         if not self.sequence_2:
             self._set_status("Comparison failed")
-            messagebox.showerror("Error", "Second sequence is not loaded.")
+            show_error("Error", "Second sequence is not loaded.")
             return
 
         try:
@@ -927,7 +921,7 @@ class App:
 
         except Exception as e:
             self._set_status("Comparison failed")
-            messagebox.showerror("Error", f"Comparison failed: {e}")
+            show_error("Error", f"Comparison failed: {e}")
 
     def _build_session_data(self):
         return build_session_data(
@@ -949,12 +943,12 @@ class App:
             self.last_comparison_df is None
         ):
             self._set_status("JSON export failed")
-            messagebox.showerror("Error", "No analysis session available for export.")
+            show_error("Error", "No analysis session available for export.")
             return
 
-        output_path = filedialog.asksaveasfilename(
+        output_path = ask_save_as_filename(
             defaultextension=".json",
-            filetypes=[("JSON files", "*.json")]
+            filetypes=[("JSON files", "*.json")],
         )
 
         if not output_path:
@@ -966,18 +960,18 @@ class App:
             session_data = self._build_session_data()
             export_session_json(session_data, output_path)
             self._set_status("JSON session exported")
-            messagebox.showinfo("Success", f"JSON session exported to:\n{output_path}")
+            show_info("Success", f"JSON session exported to:\n{output_path}")
         except Exception as e:
             self._set_status("JSON export failed")
-            messagebox.showerror("Error", f"Failed to export JSON: {e}")
+            show_error("Error", f"Failed to export JSON: {e}")
 
     def export_csv(self):
         if self.last_statistics_df is None and self.last_comparison_df is None:
             self._set_status("CSV export failed")
-            messagebox.showerror("Error", "No analysis results available for export.")
+            show_error("Error", "No analysis results available for export.")
             return
 
-        output_path = filedialog.asksaveasfilename(
+        output_path = ask_save_as_filename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")]
         )
@@ -994,10 +988,10 @@ class App:
                 output_path=output_path,
             )
             self._set_status("CSV exported")
-            messagebox.showinfo("Success", f"CSV exported to:\n{output_path}")
+            show_info("Success", f"CSV exported to:\n{output_path}")
         except Exception as e:
             self._set_status("CSV export failed")
-            messagebox.showerror("Error", f"Failed to export CSV: {e}")
+            show_error("Error", f"Failed to export CSV: {e}")
 
     def show_plot(self):
         try:
@@ -1014,12 +1008,12 @@ class App:
             self._set_status("Distribution plot generated")
         except Exception as e:
             self._set_status("Failed to generate plot")
-            messagebox.showerror("Error", f"Failed to generate plot: {e}")
+            show_error("Error", f"Failed to generate plot: {e}")
 
     def show_multi_motif_plot(self):
         if not self.last_results:
             self._set_status("No motif analysis results available")
-            messagebox.showerror("Error", "No motif analysis results available.")
+            show_error("Error", "No motif analysis results available.")
             return
 
         try:
@@ -1029,12 +1023,12 @@ class App:
             self._set_status("Multi-motif summary plot generated")
         except Exception as e:
             self._set_status("Failed to generate multi-motif plot")
-            messagebox.showerror("Error", f"Failed to generate multi-motif plot: {e}")
+            show_error("Error", f"Failed to generate multi-motif plot: {e}")
 
     def show_positions_plot(self):
         if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No motif analysis results available")
-            messagebox.showerror("Error", "No motif analysis results available.")
+            show_error("Error", "No motif analysis results available.")
             return
 
         try:
@@ -1047,15 +1041,15 @@ class App:
             self._set_status("Motif positions plot generated")
         except Exception as e:
             self._set_status("Failed to generate motif position plot")
-            messagebox.showerror("Error", f"Failed to generate motif position plot: {e}")
+            show_error("Error", f"Failed to generate motif position plot: {e}")
 
     def save_positions_plot(self):
         if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No motif analysis results available")
-            messagebox.showerror("Error", "No motif analysis results available.")
+            show_error("Error", "No motif analysis results available.")
             return
 
-        output_path = filedialog.asksaveasfilename(
+        output_path = ask_save_as_filename(
             defaultextension=".png",
             filetypes=[("PNG files", "*.png")]
         )
@@ -1072,10 +1066,10 @@ class App:
                 output_path=output_path,
             )
             self._set_status("Motif positions plot saved as PNG")
-            messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
+            show_info("Success", f"Plot saved to:\n{output_path}")
         except Exception as e:
             self._set_status("Failed to save positions plot")
-            messagebox.showerror("Error", f"Failed to save positions plot: {e}")
+            show_error("Error", f"Failed to save positions plot: {e}")
 
     def _get_motif_colors(self):
         palette = [
@@ -1133,7 +1127,7 @@ class App:
     def show_highlighted_sequence(self):
         if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No analysis results available")
-            messagebox.showerror("Error", "No motif analysis results available.")
+            show_error("Error", "No motif analysis results available.")
             return
 
         try:
@@ -1205,12 +1199,12 @@ class App:
 
         except Exception as e:
             self._set_status("Failed to generate highlighted sequence view")
-            messagebox.showerror("Error", f"Failed to generate highlighted sequence view: {e}")
+            show_error("Error", f"Failed to generate highlighted sequence view: {e}")
 
     def show_interactive_positions_plot(self):
         if not self.last_results or not self.last_analyzed_sequence:
             self._set_status("No motif analysis results available")
-            messagebox.showerror("Error", "No motif analysis results available.")
+            show_error("Error", "No motif analysis results available.")
             return
 
         try:
@@ -1257,10 +1251,10 @@ class App:
 
         except Exception as e:
             self._set_status("Failed to generate interactive plot")
-            messagebox.showerror("Error", f"Failed to generate interactive plot: {e}")
+            show_error("Error", f"Failed to generate interactive plot: {e}")
 
     def save_plot(self):
-        output_path = filedialog.asksaveasfilename(
+        output_path = ask_save_as_filename(
             defaultextension=".png",
             filetypes=[("PNG files", "*.png")]
         )
@@ -1278,20 +1272,20 @@ class App:
                 output_path=output_path,
             )
             self._set_status("Plot saved as PNG")
-            messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
+            show_info("Success", f"Plot saved to:\n{output_path}")
         except Exception as e:
             self._set_status("Failed to save plot")
-            messagebox.showerror("Error", f"Failed to save plot: {e}")
+            show_error("Error", f"Failed to save plot: {e}")
 
     def export_pdf(self):
         if self.last_comparison_df is None and (
             not self.last_results or self.last_statistics_df is None
         ):
             self._set_status("PDF export failed")
-            messagebox.showerror("Error", "No analysis or comparison results available.")
+            show_error("Error", "No analysis or comparison results available.")
             return
 
-        output_path = filedialog.asksaveasfilename(
+        output_path = ask_save_as_filename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")]
         )
@@ -1316,10 +1310,10 @@ class App:
             )
 
             self._set_status("PDF exported")
-            messagebox.showinfo("Success", f"PDF report exported to:\n{output_path}")
+            show_info("Success", f"PDF report exported to:\n{output_path}")
         except Exception as e:
             self._set_status("PDF export failed")
-            messagebox.showerror("Error", f"Failed to export PDF: {e}")
+            show_error("Error", f"Failed to export PDF: {e}")
 
     def show_analysis_history(self):
         history_path = "results/analysis_history.csv"
@@ -1327,7 +1321,7 @@ class App:
 
         if not os.path.exists(history_path):
             self._set_status("No analysis history available")
-            messagebox.showinfo("History", "No analysis history available yet.")
+            show_info("History", "No analysis history available yet.")
             return
 
         try:
@@ -1341,7 +1335,7 @@ class App:
             self._set_status("Analysis history opened")
         except Exception as e:
             self._set_status("Failed to open analysis history")
-            messagebox.showerror("Error", f"Failed to open history: {e}")
+            show_error("Error", f"Failed to open history: {e}")
 
     def _set_status(self, text):
         self.status_var.set(text)
