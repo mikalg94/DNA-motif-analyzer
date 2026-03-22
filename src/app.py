@@ -1,7 +1,6 @@
 import os
 import threading
 import webbrowser
-from datetime import datetime
 
 import pandas as pd
 import tkinter as tk
@@ -53,6 +52,11 @@ from src.validation_utils import (
     validate_motifs_against_sequence,
 )
 
+from src.report_utils import (
+    build_session_data,
+    format_analysis_results_for_sequence,
+    format_comparison_results,
+)
 
 class App:
     def __init__(self, root):
@@ -688,47 +692,25 @@ class App:
             mode=self.segment_mode_var.get()
         )
 
-        output = [
-            f"{sequence_label.upper()} ANALYSIS RESULTS\n",
-            f"Sequence length: {len(sequence)}",
-            f"GC content: {extended_stats['gc_content']}%",
-            f"AT content: {extended_stats['at_content']}%",
-            f"Unknown bases (N): {extended_stats['unknown_bases']}",
-            f"Recognized motifs: {', '.join(motifs)}",
-            f"Segment length: {segment_length}",
-            f"Segment assignment mode: {self.segment_mode_var.get()}",
-            f"Selected motif for detailed statistics: {selected_motif}",
-            f"Motif density per 1000 nt: {extended_stats['motif_density_per_1000_nt']}",
-            f"Average motifs per segment: {extended_stats['average_motifs_per_segment']}",
-            f"Segment with highest count: {extended_stats['max_segment_text']}\n",
-        ]
-
-        for result in results:
-            output.append(
-                f"Motif: {result['motif']} | "
-                f"Count: {result['count']} | "
-                f"Positions: {result['positions']}"
-            )
-
-        output.append("\nSegment statistics for selected motif:\n")
-        output.append(self.last_statistics_df.to_string(index=False))
-
-        return "\n".join(output)
+        return format_analysis_results_for_sequence(
+            sequence=sequence,
+            sequence_label=sequence_label,
+            motifs=motifs,
+            segment_length=segment_length,
+            results=results,
+            selected_motif=selected_motif,
+            statistics_df=self.last_statistics_df,
+            extended_stats=extended_stats,
+            segment_mode=self.segment_mode_var.get(),
+        )
 
     def _format_comparison_results(self, motifs):
-        output = [
-            "COMPARISON RESULTS\n",
-            f"Sequence 1 length: {len(self.sequence)}",
-            f"Sequence 2 length: {len(self.sequence_2)}",
-            f"Recognized motifs: {', '.join(motifs)}\n",
-        ]
-
-        if self.last_comparison_df.empty:
-            output.append("No comparison data to display.")
-        else:
-            output.append(self.last_comparison_df.to_string(index=False))
-
-        return "\n".join(output)
+        return format_comparison_results(
+            sequence_1=self.sequence,
+            sequence_2=self.sequence_2,
+            motifs=motifs,
+            comparison_df=self.last_comparison_df,
+        )
 
     def _save_analysis_history(self, motifs, segment_length, results):
         history_entry = {
@@ -958,24 +940,17 @@ class App:
             messagebox.showerror("Error", f"Comparison failed: {e}")
 
     def _build_session_data(self):
-        return {
-            "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "sequence_1_length": len(self.sequence) if self.sequence else 0,
-            "sequence_2_length": len(self.sequence_2) if self.sequence_2 else 0,
-            "file_path_1": self.file_path,
-            "file_path_2": self.file_path_2,
-            "last_analyzed_sequence_label": self.last_analyzed_sequence_label,
-            "selected_motif": self.last_selected_motif,
-            "analysis_results": self.last_results,
-            "statistics_dataframe": (
-                self.last_statistics_df.to_dict(orient="records")
-                if self.last_statistics_df is not None else []
-            ),
-            "comparison_results": (
-                self.last_comparison_df.to_dict(orient="records")
-                if self.last_comparison_df is not None else []
-            ),
-        }
+        return build_session_data(
+            sequence_1=self.sequence,
+            sequence_2=self.sequence_2,
+            file_path_1=self.file_path,
+            file_path_2=self.file_path_2,
+            last_analyzed_sequence_label=self.last_analyzed_sequence_label,
+            selected_motif=self.last_selected_motif,
+            analysis_results=self.last_results,
+            statistics_df=self.last_statistics_df,
+            comparison_df=self.last_comparison_df,
+        )
 
     def export_json(self):
         if (
