@@ -14,13 +14,7 @@ from src.export_utils import (
     create_motif_distribution_figure,
     create_motif_positions_figure,
     create_multiple_motifs_summary_figure,
-    export_comparison_report_to_pdf,
-    export_report_to_pdf,
-    export_results_to_csv,
-    export_session_to_json,
     interactive_motif_positions,
-    plot_motif_distribution,
-    plot_motif_positions,
     save_analysis_history,
 )
 from src.gui_sections import (
@@ -57,6 +51,14 @@ from src.analysis_service import (
     build_motif_statistics,
     run_sequence_analysis,
     run_sequence_comparison,
+)
+
+from src.export_service import (
+    export_analysis_or_comparison_csv,
+    export_analysis_or_comparison_pdf,
+    export_distribution_plot_png,
+    export_positions_plot_png,
+    export_session_json,
 )
 
 class App:
@@ -962,7 +964,7 @@ class App:
         try:
             self._set_status("Exporting JSON session...")
             session_data = self._build_session_data()
-            export_session_to_json(session_data, output_path)
+            export_session_json(session_data, output_path)
             self._set_status("JSON session exported")
             messagebox.showinfo("Success", f"JSON session exported to:\n{output_path}")
         except Exception as e:
@@ -986,11 +988,11 @@ class App:
 
         try:
             self._set_status("Exporting CSV...")
-            if self.last_comparison_df is not None:
-                export_results_to_csv(self.last_comparison_df, output_path)
-            else:
-                export_results_to_csv(self.last_statistics_df, output_path)
-
+            export_analysis_or_comparison_csv(
+                statistics_df=self.last_statistics_df,
+                comparison_df=self.last_comparison_df,
+                output_path=output_path,
+            )
             self._set_status("CSV exported")
             messagebox.showinfo("Success", f"CSV exported to:\n{output_path}")
         except Exception as e:
@@ -1064,11 +1066,10 @@ class App:
 
         try:
             self._set_status("Saving motif positions plot as PNG...")
-            plot_motif_positions(
-                self.last_results,
-                len(self.last_analyzed_sequence),
+            export_positions_plot_png(
+                results=self.last_results,
+                sequence_length=len(self.last_analyzed_sequence),
                 output_path=output_path,
-                show_plot=False
             )
             self._set_status("Motif positions plot saved as PNG")
             messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
@@ -1271,11 +1272,10 @@ class App:
         try:
             self._set_status("Saving plot as PNG...")
             self._prepare_selected_motif_statistics()
-            plot_motif_distribution(
-                self.last_statistics_df,
-                self.last_selected_motif,
+            export_distribution_plot_png(
+                statistics_df=self.last_statistics_df,
+                selected_motif=self.last_selected_motif,
                 output_path=output_path,
-                show_plot=False
             )
             self._set_status("Plot saved as PNG")
             messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
@@ -1303,19 +1303,17 @@ class App:
         try:
             self._set_status("Generating PDF...")
 
-            if self.last_comparison_df is not None:
-                export_comparison_report_to_pdf(
-                    self.last_comparison_df,
-                    output_path
-                )
-            else:
+            if self.last_comparison_df is None:
                 self._prepare_selected_motif_statistics()
-                export_report_to_pdf(
-                    self.last_statistics_df,
-                    self.last_selected_motif,
-                    len(self.last_analyzed_sequence),
-                    output_path
-                )
+
+            export_analysis_or_comparison_pdf(
+                comparison_df=self.last_comparison_df,
+                analysis_results=self.last_results,
+                statistics_df=self.last_statistics_df,
+                selected_motif=self.last_selected_motif,
+                analyzed_sequence_length=len(self.last_analyzed_sequence),
+                output_path=output_path,
+            )
 
             self._set_status("PDF exported")
             messagebox.showinfo("Success", f"PDF report exported to:\n{output_path}")
