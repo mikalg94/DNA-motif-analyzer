@@ -212,7 +212,69 @@ dna_motif_analyzer_project
 ```
 
 ---
+# 🔧 Instalacja i uruchomienie
+## Wymagania
+- Python 3.9+
+- pip
+## Instalacja zależności
+```
+pip install -r requirements.txt
+```
+## Uruchomienie aplikacji (GUI)
+```
+python main.py
+```
+## Uruchomienie w trybie CLI
+```
+python main.py data/example_sequence.txt ATG
+```
+## Uruchomienie testów
+```
+pytest
+```
+---
+# 🌐 Pobieranie danych z NCBI
 
+### Aplikacja umożliwia pobieranie sekwencji DNA z bazy NCBI GenBank przy użyciu biblioteki Biopython.
+
+Przykład:
+
+- podaj identyfikator sekwencji (np. NM_001200025)
+- aplikacja pobierze dane przez API Entrez
+
+⚠️ Uwaga:
+
+- wymagane jest połączenie z Internetem
+- NCBI może ograniczać liczbę zapytań (rate limiting)
+---
+# 🧪 Testy
+
+### Projekt zawiera testy jednostkowe dla:
+
+- analizy motywów
+- walidacji danych
+- operacji I/O
+- integracji aplikacji
+- komunikacji z NCBI
+
+### Uruchomienie:
+```
+pytest
+```
+---
+# 🐙 Repozytorium GitHub
+
+### Projekt dostępny jest w repozytorium:
+```
+https://github.com/mikalg94/DNA-motif-analyzer
+```
+### Repozytorium zawiera:
+
+- pełną historię zmian
+- kod źródłowy
+- testy
+- dokumentację
+---
 # 👨‍💻 Autor
 
 ### Michał Grzybała
