@@ -253,10 +253,49 @@ class App:
     def _set_sequence_data(self, target, sequence, source_label):
         if target == 1:
             self.sequence = sequence
-            self.file_label.config(text=source_label)
-        else:
+        elif target == 2:
             self.sequence_2 = sequence
-            self.file_label_2.config(text=source_label)
+        else:
+            raise ValueError("Target must be 1 or 2.")
+
+        label_widget = self._get_sequence_label_widget_by_target(target)
+        label_widget.config(text=source_label)
+
+    def _get_sequence_by_target(self, target):
+        if target == 1:
+            return self.sequence
+        if target == 2:
+            return self.sequence_2
+        raise ValueError("Target must be 1 or 2.")
+
+    def _get_file_path_by_target(self, target):
+        if target == 1:
+            return self.file_path
+        if target == 2:
+            return self.file_path_2
+        raise ValueError("Target must be 1 or 2.")
+
+    def _set_file_path_by_target(self, target, path):
+        if target == 1:
+            self.file_path = path
+        elif target == 2:
+            self.file_path_2 = path
+        else:
+            raise ValueError("Target must be 1 or 2.")
+
+    def _get_sequence_label_widget_by_target(self, target):
+        if target == 1:
+            return self.file_label
+        if target == 2:
+            return self.file_label_2
+        raise ValueError("Target must be 1 or 2.")
+
+    def _get_target_display_name(self, target):
+        if target == 1:
+            return "First sequence"
+        if target == 2:
+            return "Second sequence"
+        raise ValueError("Target must be 1 or 2.")
 
     def _clear_single_analysis_state(self):
         self.last_results = []
@@ -328,6 +367,8 @@ class App:
         self._close_progress_dialog()
         self._show_sequence_warning_if_needed(sequence)
 
+        target_name = self._get_target_display_name(target)
+
         if is_example:
             self._set_sequence_data(target, sequence, f"Loaded example from NCBI: {accession_id}")
             messagebox.showinfo(
@@ -339,12 +380,7 @@ class App:
             )
         else:
             self._set_sequence_data(target, sequence, f"Loaded from NCBI: {accession_id}")
-
-            if target == 1:
-                success_message = f"First sequence downloaded from NCBI.\nLength: {len(sequence)}"
-            else:
-                success_message = f"Second sequence downloaded from NCBI.\nLength: {len(sequence)}"
-
+            success_message = f"{target_name} downloaded from NCBI.\nLength: {len(sequence)}"
             messagebox.showinfo("Success", success_message)
 
         self._update_action_buttons_state()
@@ -404,12 +440,9 @@ class App:
         try:
             sequence = self._load_sequence_from_path(selected_path)
 
-            if target == 1:
-                self.file_path = selected_path
-                success_message = f"First sequence loaded successfully.\nLength: {len(sequence)}"
-            else:
-                self.file_path_2 = selected_path
-                success_message = f"Second sequence loaded successfully.\nLength: {len(sequence)}"
+            self._set_file_path_by_target(target, selected_path)
+            target_name = self._get_target_display_name(target)
+            success_message = f"{target_name} loaded successfully.\nLength: {len(sequence)}"
 
             self._set_sequence_data(target, sequence, selected_path)
             self._update_action_buttons_state()
@@ -420,8 +453,10 @@ class App:
         except Exception as e:
             if target == 1:
                 self.sequence = ""
+                self.file_label.config(text="No first file selected")
             else:
                 self.sequence_2 = ""
+                self.file_label_2.config(text="No second file selected")
 
             self._set_status("Failed to load sequence")
             self._update_action_buttons_state()
@@ -869,11 +904,16 @@ class App:
             self._set_status("Analysis failed")
             messagebox.showerror("Error", str(e))
 
+    def run_analysis_for_target(self, target):
+        sequence = self._get_sequence_by_target(target)
+        sequence_label = f"Sequence {target}"
+        self._run_analysis_for_sequence(sequence, sequence_label)
+
     def run_analysis_sequence_1(self):
-        self._run_analysis_for_sequence(self.sequence, "Sequence 1")
+        self.run_analysis_for_target(1)
 
     def run_analysis_sequence_2(self):
-        self._run_analysis_for_sequence(self.sequence_2, "Sequence 2")
+        self.run_analysis_for_target(2)
 
     def run_analysis(self):
         self.run_analysis_sequence_1()
