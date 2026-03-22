@@ -1,8 +1,31 @@
-.idea/
+# Virtual environment
+.venv/
 venv/
+
+# Python cache
 __pycache__/
 *.pyc
-results/*.csv
-results/*.png
-results/*.pdf
+*.pyo
+*.pyd
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test cache
 .pytest_cache/
+
+# Results
+results/*
+!results/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
