@@ -58,6 +58,11 @@ from src.report_utils import (
     format_comparison_results,
 )
 
+from src.history_utils import (
+    build_analysis_history_entry,
+    build_comparison_history_entry,
+)
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -747,37 +752,14 @@ class App:
             comparison_df=self.last_comparison_df,
         )
 
-    def _save_analysis_history(self, motifs, segment_length, results):
-        history_entry = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "operation": "analysis",
-            "sequence_1_length": len(self.last_analyzed_sequence),
-            "sequence_2_length": "",
-            "motifs": ", ".join(motifs),
-            "segment_length": segment_length,
-            "details": "; ".join(
-                [f"{result['motif']}={result['count']}" for result in results]
-            )
-        }
-        save_analysis_history(history_entry)
 
     def _save_comparison_history(self, motifs):
-        comparison_details = []
-        for _, row in self.last_comparison_df.iterrows():
-            comparison_details.append(
-                f"{row['motif']}: seq1={row['sequence_1_count']}, "
-                f"seq2={row['sequence_2_count']}"
-            )
-
-        history_entry = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "operation": "comparison",
-            "sequence_1_length": len(self.sequence),
-            "sequence_2_length": len(self.sequence_2),
-            "motifs": ", ".join(motifs),
-            "segment_length": "",
-            "details": "; ".join(comparison_details)
-        }
+        history_entry = build_comparison_history_entry(
+            sequence_1=self.sequence,
+            sequence_2=self.sequence_2,
+            motifs=motifs,
+            comparison_df=self.last_comparison_df,
+        )
         save_analysis_history(history_entry)
 
     def _save_analysis_history_for_sequence(
@@ -788,17 +770,13 @@ class App:
         segment_length,
         results
     ):
-        history_entry = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "operation": f"analysis_{sequence_label.lower().replace(' ', '_')}",
-            "sequence_1_length": len(sequence),
-            "sequence_2_length": "",
-            "motifs": ", ".join(motifs),
-            "segment_length": segment_length,
-            "details": "; ".join(
-                [f"{result['motif']}={result['count']}" for result in results]
-            )
-        }
+        history_entry = build_analysis_history_entry(
+            sequence=sequence,
+            sequence_label=sequence_label,
+            motifs=motifs,
+            segment_length=segment_length,
+            results=results,
+        )
         save_analysis_history(history_entry)
 
     def _clear_result_table(self):
