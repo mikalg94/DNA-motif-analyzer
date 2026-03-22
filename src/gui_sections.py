@@ -59,6 +59,7 @@ def build_main_layout(app):
 
     app.main_canvas.bind("<Configure>", _center_content_in_canvas)
 
+
 def build_title(app):
     app.title_label = ttk.Label(
         app.scrollable_frame,
@@ -435,6 +436,7 @@ def build_actions_frame(app):
     )
     app.toggle_theme_button.pack(pady=3)
 
+
 def build_results_frame(app):
     app.result_container = ttk.LabelFrame(
         app.scrollable_frame,
@@ -452,7 +454,6 @@ def build_results_frame(app):
     app.result_notebook.add(app.result_text_tab, text="Text Summary")
     app.result_notebook.add(app.result_table_tab, text="Table")
 
-    # zakładka tekstowa
     app.result_text_frame = ttk.Frame(app.result_text_tab)
     app.result_text_frame.pack(fill="both", expand=True)
 
@@ -469,7 +470,6 @@ def build_results_frame(app):
 
     app.result_scrollbar.config(command=app.result_text.yview)
 
-    # zakładka tabeli
     app.result_table_frame = ttk.Frame(app.result_table_tab)
     app.result_table_frame.pack(fill="both", expand=True)
 
@@ -489,6 +489,7 @@ def build_results_frame(app):
 
     app.result_table_scrollbar_y.config(command=app.result_tree.yview)
     app.result_table_scrollbar_x.config(command=app.result_tree.xview)
+
 
 def build_status_bar(app):
     app.status_var = tk.StringVar()

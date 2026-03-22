@@ -336,21 +336,6 @@ def export_report_to_pdf(df, motif, sequence_length, output_path):
         plt.close(fig)
 
 
-def save_analysis_history(entry, output_path="results/analysis_history.csv"):
-    directory = os.path.dirname(output_path)
-    if directory:
-        os.makedirs(directory, exist_ok=True)
-
-    new_row = pd.DataFrame([entry])
-
-    if os.path.exists(output_path):
-        existing_df = pd.read_csv(output_path)
-        updated_df = pd.concat([existing_df, new_row], ignore_index=True)
-    else:
-        updated_df = new_row
-
-    updated_df.to_csv(output_path, index=False)
-
 def export_comparison_report_to_pdf(comparison_df, output_path):
     with PdfPages(output_path) as pdf:
         fig, ax = plt.subplots(figsize=(8.27, 11.69))
@@ -421,3 +406,19 @@ def export_comparison_report_to_pdf(comparison_df, output_path):
             plt.tight_layout()
             pdf.savefig(fig)
             plt.close(fig)
+
+
+def save_analysis_history(entry, output_path="results/analysis_history.csv"):
+    directory = os.path.dirname(output_path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    new_row = pd.DataFrame([entry])
+
+    if os.path.exists(output_path):
+        existing_df = pd.read_csv(output_path)
+        updated_df = pd.concat([existing_df, new_row], ignore_index=True)
+    else:
+        updated_df = new_row
+
+    updated_df.to_csv(output_path, index=False)

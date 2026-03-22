@@ -76,6 +76,9 @@ class App:
 
         self.current_theme = "light"
 
+        self.progress_window = None
+        self.progress_bar = None
+
         build_main_layout(self)
         build_title(self)
         build_files_frame(self)
@@ -87,9 +90,6 @@ class App:
 
         self._configure_styles()
         self._update_action_buttons_state()
-
-        self.progress_window = None
-        self.progress_bar = None
 
     def _configure_styles(self):
         style = ttk.Style()
@@ -171,6 +171,9 @@ class App:
         self.show_positions_button.config(
             state="normal" if has_analysis_results else "disabled"
         )
+        self.save_positions_plot_button.config(
+            state="normal" if has_analysis_results else "disabled"
+        )
         self.show_highlighted_sequence_button.config(
             state="normal" if has_analysis_results else "disabled"
         )
@@ -180,11 +183,8 @@ class App:
         self.save_plot_button.config(
             state="normal" if has_analysis_results else "disabled"
         )
-        self.save_positions_plot_button.config(
-            state="normal" if has_analysis_results else "disabled"
-        )
         self.export_pdf_button.config(
-            state="normal" if has_analysis_results else "disabled"
+            state="normal" if has_analysis_results or has_comparison else "disabled"
         )
         self.show_history_button.config(
             state="normal" if os.path.exists("results/analysis_history.csv") else "disabled"
@@ -246,7 +246,7 @@ class App:
         self.example_button_2.config(state=state)
 
     def _show_progress_dialog(self, title="Please wait", message="Operation in progress..."):
-        if hasattr(self, "progress_window") and self.progress_window is not None:
+        if self.progress_window is not None:
             return
 
         self.progress_window = tk.Toplevel(self.root)
@@ -270,14 +270,14 @@ class App:
         self.progress_window.protocol("WM_DELETE_WINDOW", lambda: None)
 
     def _close_progress_dialog(self):
-        if hasattr(self, "progress_bar") and self.progress_bar is not None:
+        if self.progress_bar is not None:
             try:
                 self.progress_bar.stop()
             except Exception:
                 pass
             self.progress_bar = None
 
-        if hasattr(self, "progress_window") and self.progress_window is not None:
+        if self.progress_window is not None:
             try:
                 self.progress_window.grab_release()
             except Exception:
@@ -932,35 +932,6 @@ class App:
             ),
         }
 
-    def save_positions_plot(self):
-        if not self.last_results or not self.last_analyzed_sequence:
-            self._set_status("No motif analysis results available")
-            messagebox.showerror("Error", "No motif analysis results available.")
-            return
-
-        output_path = filedialog.asksaveasfilename(
-            defaultextension=".png",
-            filetypes=[("PNG files", "*.png")]
-        )
-
-        if not output_path:
-            self._set_status("Ready")
-            return
-
-        try:
-            self._set_status("Saving motif positions plot as PNG...")
-            plot_motif_positions(
-                self.last_results,
-                len(self.last_analyzed_sequence),
-                output_path=output_path,
-                show_plot=False
-            )
-            self._set_status("Motif positions plot saved as PNG")
-            messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
-        except Exception as e:
-            self._set_status("Failed to save positions plot")
-            messagebox.showerror("Error", f"Failed to save positions plot: {e}")
-
     def export_json(self):
         if (
             not self.last_results and
@@ -1067,6 +1038,35 @@ class App:
         except Exception as e:
             self._set_status("Failed to generate motif position plot")
             messagebox.showerror("Error", f"Failed to generate motif position plot: {e}")
+
+    def save_positions_plot(self):
+        if not self.last_results or not self.last_analyzed_sequence:
+            self._set_status("No motif analysis results available")
+            messagebox.showerror("Error", "No motif analysis results available.")
+            return
+
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png")]
+        )
+
+        if not output_path:
+            self._set_status("Ready")
+            return
+
+        try:
+            self._set_status("Saving motif positions plot as PNG...")
+            plot_motif_positions(
+                self.last_results,
+                len(self.last_analyzed_sequence),
+                output_path=output_path,
+                show_plot=False
+            )
+            self._set_status("Motif positions plot saved as PNG")
+            messagebox.showinfo("Success", f"Plot saved to:\n{output_path}")
+        except Exception as e:
+            self._set_status("Failed to save positions plot")
+            messagebox.showerror("Error", f"Failed to save positions plot: {e}")
 
     def _get_motif_colors(self):
         palette = [
