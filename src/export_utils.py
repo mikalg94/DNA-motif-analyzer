@@ -11,6 +11,7 @@ import plotly.express as px
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 
+from src.constants import INTERACTIVE_PLOT_PATH
 
 def export_session_to_json(session_data, output_path):
     with open(output_path, "w", encoding="utf-8") as json_file:
@@ -210,8 +211,7 @@ def plot_multiple_motifs_summary(results, output_path=None, show_plot=True):
     else:
         plt.close()
 
-
-def interactive_motif_positions(results, sequence_length, output_html="results/interactive_motif_positions.html"):
+def interactive_motif_positions(results, sequence_length, output_html=INTERACTIVE_PLOT_PATH):
     rows = []
 
     for result in results:

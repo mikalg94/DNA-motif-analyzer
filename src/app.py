@@ -4,7 +4,7 @@ import webbrowser
 
 import pandas as pd
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import ttk
 
 from src.export_utils import (
     create_gc_comparison_figure,
@@ -61,12 +61,16 @@ from src.export_service import (
 )
 
 from src.gui_helpers import (
+    ask_open_sequence_filename,
     ask_save_as_filename,
+    get_default_empty_file_label,
     open_figure_window,
     show_error,
     show_info,
     show_warning,
 )
+
+from src.constants import ANALYSIS_HISTORY_PATH, INTERACTIVE_PLOT_PATH, RESULTS_DIR
 
 class App:
     def __init__(self, root):
@@ -236,9 +240,8 @@ class App:
             state="normal" if has_analysis_results or has_comparison else "disabled"
         )
         self.show_history_button.config(
-            state="normal" if os.path.exists("results/analysis_history.csv") else "disabled"
+            state="normal" if os.path.exists(ANALYSIS_HISTORY_PATH) else "disabled"
         )
-
         self.show_gc_button.config(
             state="normal" if has_statistics else "disabled"
         )
@@ -276,6 +279,13 @@ class App:
             return self.sequence
         if target == 2:
             return self.sequence_2
+        raise ValueError("Target must be 1 or 2.")
+
+    def _get_ncbi_entry_by_target(self, target):
+        if target == 1:
+            return self.ncbi_entry
+        if target == 2:
+            return self.ncbi_entry_2
         raise ValueError("Target must be 1 or 2.")
 
     def _get_file_path_by_target(self, target):
@@ -439,9 +449,7 @@ class App:
 
     def choose_file(self, target):
         self._set_status("Loading sequence from file...")
-        selected_path = filedialog.askopenfilename(
-            filetypes=[("Sequence files", "*.txt *.fasta *.fa"), ("All files", "*.*")]
-        )
+        selected_path = ask_open_sequence_filename()
 
         if not selected_path:
             self._set_status("Ready")
@@ -463,17 +471,18 @@ class App:
         except Exception as e:
             if target == 1:
                 self.sequence = ""
-                self.file_label.config(text="No first file selected")
             else:
                 self.sequence_2 = ""
-                self.file_label_2.config(text="No second file selected")
+
+            label_widget = self._get_sequence_label_widget_by_target(target)
+            label_widget.config(text=get_default_empty_file_label(target))
 
             self._set_status("Failed to load sequence")
             self._update_action_buttons_state()
             show_error("Error", f"Failed to load sequence: {e}")
 
     def fetch_from_ncbi(self, target):
-        accession_entry = self.ncbi_entry if target == 1 else self.ncbi_entry_2
+        accession_entry = self._get_ncbi_entry_by_target(target)
         accession_id = accession_entry.get().strip()
         email = self.email_entry.get().strip()
 
@@ -1209,7 +1218,7 @@ class App:
 
         try:
             self._set_status("Generating interactive motif plot...")
-            os.makedirs("results", exist_ok=True)
+            os.makedirs(RESULTS_DIR, exist_ok=True)
 
             output_html = interactive_motif_positions(
                 self.last_results,
@@ -1316,7 +1325,7 @@ class App:
             show_error("Error", f"Failed to export PDF: {e}")
 
     def show_analysis_history(self):
-        history_path = "results/analysis_history.csv"
+        history_path = ANALYSIS_HISTORY_PATH
         self._update_action_buttons_state()
 
         if not os.path.exists(history_path):
