@@ -30,14 +30,11 @@ def build_main_layout(app):
     app.main_canvas.pack(side="left", fill="both", expand=True)
     app.main_scrollbar.pack(side="right", fill="y")
 
-    app.root.grid_rowconfigure(0, weight=1)
-    app.root.grid_columnconfigure(0, weight=1)
-
     app.outer_content_frame = ttk.Frame(app.scrollable_frame)
     app.outer_content_frame.pack(fill="both", expand=True, padx=15, pady=5)
 
+    # najpierw utworzenie, bez pack()
     app.content_frame = ttk.Frame(app.outer_content_frame)
-    app.content_frame.pack(anchor="center", fill="x", expand=True)
 
     app.content_frame.grid_columnconfigure(0, weight=1, uniform="columns")
     app.content_frame.grid_columnconfigure(1, weight=1, uniform="columns")
@@ -59,14 +56,28 @@ def build_main_layout(app):
 
     app.main_canvas.bind("<Configure>", _center_content_in_canvas)
 
+    def _center_content_in_canvas(event):
+        canvas_width = event.width
+        desired_width = min(canvas_width - 30, 1400)
+        if desired_width < 600:
+            desired_width = canvas_width - 10
+
+        app.main_canvas.itemconfigure(app.canvas_window_id, width=desired_width)
+        app.main_canvas.coords(app.canvas_window_id, canvas_width / 2, 0)
+
+    app.main_canvas.bind("<Configure>", _center_content_in_canvas)
+
 
 def build_title(app):
     app.title_label = ttk.Label(
-        app.scrollable_frame,
+        app.outer_content_frame,
         text="DNA Motif Analyzer",
         font=("Arial", 18, "bold")
     )
     app.title_label.pack(pady=10)
+
+    # dopiero tutaj pakujemy główny układ 2-kolumnowy
+    app.content_frame.pack(anchor="center", fill="x", expand=True)
 
 
 def build_files_frame(app):
@@ -439,11 +450,11 @@ def build_actions_frame(app):
 
 def build_results_frame(app):
     app.result_container = ttk.LabelFrame(
-        app.scrollable_frame,
+        app.outer_content_frame,
         text="Results",
         padding=10
     )
-    app.result_container.pack(fill="both", expand=True, padx=15, pady=10)
+    app.result_container.pack(fill="both", expand=True, padx=0, pady=10)
 
     app.result_notebook = ttk.Notebook(app.result_container)
     app.result_notebook.pack(fill="both", expand=True)
@@ -473,22 +484,33 @@ def build_results_frame(app):
     app.result_table_frame = ttk.Frame(app.result_table_tab)
     app.result_table_frame.pack(fill="both", expand=True)
 
-    app.result_table_scrollbar_y = ttk.Scrollbar(app.result_table_frame, orient="vertical")
-    app.result_table_scrollbar_y.pack(side="right", fill="y")
-
-    app.result_table_scrollbar_x = ttk.Scrollbar(app.result_table_frame, orient="horizontal")
-    app.result_table_scrollbar_x.pack(side="bottom", fill="x")
+    app.result_table_frame.grid_rowconfigure(0, weight=1)
+    app.result_table_frame.grid_columnconfigure(0, weight=1)
 
     app.result_tree = ttk.Treeview(
         app.result_table_frame,
-        show="headings",
+        show="headings"
+    )
+    app.result_tree.grid(row=0, column=0, sticky="nsew")
+
+    app.result_table_scrollbar_y = ttk.Scrollbar(
+        app.result_table_frame,
+        orient="vertical",
+        command=app.result_tree.yview
+    )
+    app.result_table_scrollbar_y.grid(row=0, column=1, sticky="ns")
+
+    app.result_table_scrollbar_x = ttk.Scrollbar(
+        app.result_table_frame,
+        orient="horizontal",
+        command=app.result_tree.xview
+    )
+    app.result_table_scrollbar_x.grid(row=1, column=0, sticky="ew")
+
+    app.result_tree.configure(
         yscrollcommand=app.result_table_scrollbar_y.set,
         xscrollcommand=app.result_table_scrollbar_x.set
     )
-    app.result_tree.pack(side="left", fill="both", expand=True)
-
-    app.result_table_scrollbar_y.config(command=app.result_tree.yview)
-    app.result_table_scrollbar_x.config(command=app.result_tree.xview)
 
 
 def build_status_bar(app):
@@ -499,6 +521,7 @@ def build_status_bar(app):
         app.root,
         textvariable=app.status_var,
         anchor="w",
-        padding=(8, 4)
+        padding=(8, 4),
+        width=40
     )
     app.status_bar.pack(side="bottom", fill="x")
