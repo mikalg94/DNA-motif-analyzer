@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+from src.constants import DEFAULT_MOTIFS, DEFAULT_SEGMENT_LENGTH
+
 
 def build_main_layout(app):
     app.main_canvas = tk.Canvas(app.root)
@@ -207,7 +209,7 @@ def build_analysis_frame(app):
     app.motif_label.pack(pady=3, anchor="w")
 
     app.motif_entry = ttk.Entry(app.analysis_frame, width=45)
-    app.motif_entry.insert(0, "ATG, TATA, CGCG")
+    app.motif_entry.insert(0, DEFAULT_MOTIFS)
     app.motif_entry.pack(pady=3, fill="x")
 
     app.selected_motif_label = ttk.Label(
@@ -235,7 +237,7 @@ def build_analysis_frame(app):
         width=10
     )
     app.segment_entry.delete(0, "end")
-    app.segment_entry.insert(0, "10")
+    app.segment_entry.insert(0, str(DEFAULT_SEGMENT_LENGTH))
     app.segment_entry.pack(pady=3, anchor="w")
 
     app.sort_results_var = tk.StringVar(value="original")

@@ -3,6 +3,8 @@ import tkinter as tk
 import webbrowser
 from tkinter import ttk
 
+from src.constants import HIGHLIGHTED_SEQUENCE_LINE_LENGTH
+
 
 def create_progress_dialog(root, title="Please wait", message="Operation in progress..."):
     progress_window = tk.Toplevel(root)
@@ -42,14 +44,21 @@ def close_progress_dialog(progress_window, progress_bar):
             pass
         progress_window.destroy()
 
-
-def insert_sequence_with_line_breaks(text_widget, sequence, line_length=80):
+def insert_sequence_with_line_breaks(
+        text_widget,
+        sequence,
+        line_length=HIGHLIGHTED_SEQUENCE_LINE_LENGTH,
+):
     for i in range(0, len(sequence), line_length):
         chunk = sequence[i:i + line_length]
         text_widget.insert(tk.END, chunk + "\n")
 
-
-def highlight_motif_occurrences(text_widget, results, motif_colors, line_length=80):
+def highlight_motif_occurrences(
+        text_widget,
+        results,
+        motif_colors,
+        line_length=HIGHLIGHTED_SEQUENCE_LINE_LENGTH,
+):
     for result in results:
         motif = result["motif"]
         positions = result["positions"]
@@ -137,8 +146,8 @@ def open_highlighted_sequence_window(root, sequence, sequence_label, results, mo
     scrollbar_y.config(command=text_widget.yview)
     scrollbar_x.config(command=text_widget.xview)
 
-    insert_sequence_with_line_breaks(text_widget, sequence, line_length=80)
-    highlight_motif_occurrences(text_widget, results, motif_colors, line_length=80)
+    insert_sequence_with_line_breaks(text_widget, sequence)
+    highlight_motif_occurrences(text_widget, results, motif_colors)
 
     text_widget.config(state="disabled")
 
