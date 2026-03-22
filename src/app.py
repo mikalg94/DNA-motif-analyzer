@@ -74,6 +74,12 @@ from src.constants import ANALYSIS_HISTORY_PATH, RESULTS_DIR
 
 from src.app_state import build_sequences_state
 
+from src.analysis_handlers import (
+    filter_and_sort_results,
+    prepare_sequence_analysis,
+    prepare_sequence_comparison,
+)
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -659,31 +665,12 @@ class App:
         )
 
     def _filter_and_sort_results(self, results):
-        processed_results = results[:]
-
-        if self.only_found_var.get():
-            processed_results = [
-                result for result in processed_results
-                if result["count"] > 0
-            ]
-
-        sort_mode = self.sort_results_var.get()
-
-        if sort_mode == "count_desc":
-            processed_results.sort(key=lambda item: item["count"], reverse=True)
-        elif sort_mode == "count_asc":
-            processed_results.sort(key=lambda item: item["count"])
-
-        top_n_text = self.top_n_entry.get().strip()
-        if top_n_text:
-            try:
-                top_n = int(top_n_text)
-                if top_n > 0:
-                    processed_results = processed_results[:top_n]
-            except ValueError:
-                raise ValueError("Top N must be a positive integer.")
-
-        return processed_results
+        return filter_and_sort_results(
+            results,
+            only_found=self.only_found_var.get(),
+            sort_mode=self.sort_results_var.get(),
+            top_n_text=self.top_n_entry.get().strip(),
+        )
 
     def _format_analysis_results_for_sequence(
         self,
@@ -808,44 +795,34 @@ class App:
             motifs, segment_length = self._get_motifs_and_segment_length()
             self._validate_analysis_inputs(motifs, sequence)
 
-            results = run_sequence_analysis(sequence, motifs)
-            display_results = self._filter_and_sort_results(results)
+            prepared = prepare_sequence_analysis(
+                sequence=sequence,
+                sequence_label=sequence_label,
+                motifs=motifs,
+                segment_length=segment_length,
+                mode=self.segment_mode_var.get(),
+                only_found=self.only_found_var.get(),
+                sort_mode=self.sort_results_var.get(),
+                top_n_text=self.top_n_entry.get().strip(),
+                extended_stats_builder=self._build_extended_sequence_statistics_for_sequence,
+            )
 
             self._clear_comparison_state()
 
-            self.last_results = results
+            self.last_results = prepared["results"]
             self.last_analyzed_sequence = sequence
             self.last_analyzed_sequence_label = sequence_label
 
             self.selected_motif_combobox["values"] = motifs
-            self.selected_motif_combobox.set(motifs[0])
+            self.selected_motif_combobox.set(prepared["selected_motif"])
 
-            self.last_selected_motif = motifs[0]
-            self.last_statistics_df = build_motif_statistics(
-                sequence,
-                self.last_selected_motif,
-                segment_length,
-                mode=self.segment_mode_var.get(),
-            )
+            self.last_selected_motif = prepared["selected_motif"]
+            self.last_statistics_df = prepared["statistics_df"]
 
-            final_text = self._format_analysis_results_for_sequence(
-                sequence,
-                sequence_label,
-                motifs,
-                segment_length,
-                display_results
-            )
-
-            self._save_analysis_history_for_sequence(
-                sequence,
-                sequence_label,
-                motifs,
-                segment_length,
-                results
-            )
+            save_analysis_history(prepared["history_entry"])
 
             self._display_results(
-                final_text,
+                prepared["final_text"],
                 dataframe=self.last_statistics_df
             )
 
@@ -890,41 +867,23 @@ class App:
             self._validate_analysis_inputs(motifs, sequence_1)
             self._validate_analysis_inputs(motifs, sequence_2)
 
-            self._prepare_comparison_results(motifs)
+            prepared = prepare_sequence_comparison(
+                sequence_1=sequence_1,
+                sequence_2=sequence_2,
+                motifs=motifs,
+                only_found=self.only_found_var.get(),
+                sort_mode=self.sort_results_var.get(),
+                top_n_text=self.top_n_entry.get().strip(),
+            )
 
-            if self.only_found_var.get():
-                self.last_comparison_df = self.last_comparison_df[
-                    (self.last_comparison_df["sequence_1_count"] > 0) |
-                    (self.last_comparison_df["sequence_2_count"] > 0)
-                ]
-
-            sort_mode = self.sort_results_var.get()
-            if sort_mode == "count_desc":
-                self.last_comparison_df = self.last_comparison_df.sort_values(
-                    by=["sequence_1_count", "sequence_2_count"],
-                    ascending=False
-                )
-            elif sort_mode == "count_asc":
-                self.last_comparison_df = self.last_comparison_df.sort_values(
-                    by=["sequence_1_count", "sequence_2_count"],
-                    ascending=True
-                )
-
-            top_n_text = self.top_n_entry.get().strip()
-            if top_n_text:
-                try:
-                    top_n = int(top_n_text)
-                    if top_n > 0:
-                        self.last_comparison_df = self.last_comparison_df.head(top_n)
-                except ValueError:
-                    raise ValueError("Top N must be a positive integer.")
+            self.last_comparison_df = prepared["comparison_df"]
 
             self._clear_single_analysis_state()
 
-            final_text = self._format_comparison_results(motifs)
-            self._save_comparison_history(motifs)
+            save_analysis_history(prepared["history_entry"])
+
             self._display_results(
-                final_text,
+                prepared["final_text"],
                 dataframe=self.last_comparison_df
             )
             self._update_action_buttons_state()
